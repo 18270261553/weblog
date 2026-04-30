@@ -1,6 +1,7 @@
 package com.quanxiaoha.weblog.web.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.quanxiaoha.weblog.common.PageResponse;
@@ -21,10 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -99,10 +97,10 @@ public class ArticleServiceImpl implements ArticleService {
             List<ArticleTagRelDO> articleTagRelDOS = articleTagRelDao.selectByArticleIds(articleIds);
             list = list.stream().map(p -> {
                 Long articleId = p.getId();
-                List<ArticleTagRelDO> articleTagRelDOList = articleTagRelDOS.stream().filter(rel -> Objects.equals(rel.getArticleId(), articleId)).collect(Collectors.toList());
+                List<ArticleTagRelDO> currentArticleTagRels = articleTagRelDOS.stream().filter(rel -> Objects.equals(rel.getArticleId(), articleId)).collect(Collectors.toList());
 
                 List<QueryTagListItemRspVO> queryTagListItemRspVOS = Lists.newArrayList();
-                articleTagRelDOList.forEach(rel -> {
+                currentArticleTagRels.forEach(rel -> {
                     Long tagId = rel.getTagId();
                     String tagName = tagIdNameMap.get(tagId);
 
@@ -264,16 +262,86 @@ public class ArticleServiceImpl implements ArticleService {
         Long size = queryTagArticlePageListReqVO.getSize();
         Long queryTagId = queryTagArticlePageListReqVO.getTagId();
 
-        List<ArticleTagRelDO> articleTagRelDOS1 = articleTagRelDao.selectByTagId(queryTagId);
+        List<ArticleTagRelDO> articleTagRelDOList = articleTagRelDao.selectByTagId(queryTagId);
 
-        // 判断该分类下是否存在文章
-        if (CollectionUtils.isEmpty(articleTagRelDOS1)) {
+        if (CollectionUtils.isEmpty(articleTagRelDOList)) {
             return PageResponse.success(null, null);
         }
 
-        List<Long> tagArticleIds = articleTagRelDOS1.stream().map(p -> p.getArticleId()).collect(Collectors.toList());
+        List<Long> tagArticleIds = articleTagRelDOList.stream().map(p -> p.getArticleId()).collect(Collectors.toList());
 
         IPage<ArticleDO> articleDOIPage = articleDao.queryArticlePageListByArticleIds(current, size, tagArticleIds);
+        List<ArticleDO> records = articleDOIPage.getRecords();
+
+        List<QueryIndexArticlePageItemRspVO> list = null;
+        if (!CollectionUtils.isEmpty(records)) {
+            list = records.stream()
+                    .map(articleDO -> articleConvert.convert(articleDO))
+                    .collect(Collectors.toList());
+
+            List<Long> articleIds = list.stream().map(p -> p.getId()).collect(Collectors.toList());
+
+            // 设置分类信息
+            List<CategoryDO> categoryDOS = categoryDao.selectAllCategory();
+            Map<Long, String> categoryIdNameMap = categoryDOS.stream().collect(Collectors.toMap(CategoryDO::getId, CategoryDO::getName));
+
+            List<ArticleCategoryRelDO> articleCategoryRelDOS = articleCategoryRelDao.selectByArticleIds(articleIds);
+            list = list.stream().map(p -> {
+                Long articleId = p.getId();
+                Optional<ArticleCategoryRelDO> optional = articleCategoryRelDOS.stream().filter(rel -> Objects.equals(rel.getArticleId(), articleId)).findFirst();
+                if (optional.isPresent()) {
+                    ArticleCategoryRelDO articleCategoryRelDO = optional.get();
+                    Long categoryId = articleCategoryRelDO.getCategoryId();
+                    String categoryName = categoryIdNameMap.get(categoryId);
+
+                    QueryCategoryListItemRspVO queryCategoryListItemRspVO = QueryCategoryListItemRspVO.builder()
+                            .id(categoryId)
+                            .name(categoryName)
+                            .build();
+                    p.setCategory(queryCategoryListItemRspVO);
+                }
+                return p;
+            }).collect(Collectors.toList());
+
+            // 设置标签信息
+            List<TagDO> tagDOS = tagDao.selectAllTag();
+            Map<Long, String> tagIdNameMap = tagDOS.stream().collect(Collectors.toMap(TagDO::getId, TagDO::getName));
+
+            List<ArticleTagRelDO> articleTagRelDOS = articleTagRelDao.selectByArticleIds(articleIds);
+            list = list.stream().map(p -> {
+                Long articleId = p.getId();
+                List<ArticleTagRelDO> currentArticleTagRels = articleTagRelDOS.stream().filter(rel -> Objects.equals(rel.getArticleId(), articleId)).collect(Collectors.toList());
+
+                List<QueryTagListItemRspVO> queryTagListItemRspVOS = Lists.newArrayList();
+                currentArticleTagRels.forEach(rel -> {
+                    Long tagId = rel.getTagId();
+                    String tagName = tagIdNameMap.get(tagId);
+
+                    QueryTagListItemRspVO queryTagListItemRspVO = QueryTagListItemRspVO.builder()
+                            .id(tagId)
+                            .name(tagName)
+                            .build();
+                    queryTagListItemRspVOS.add(queryTagListItemRspVO);
+                });
+
+                p.setTags(queryTagListItemRspVOS);
+                return p;
+            }).collect(Collectors.toList());
+        }
+        return PageResponse.success(articleDOIPage, list);
+    }
+
+    @Override
+    public PageResponse searchArticles(QueryIndexArticlePageListReqVO queryIndexArticlePageListReqVO) {
+        Long current = queryIndexArticlePageListReqVO.getCurrent();
+        Long size = queryIndexArticlePageListReqVO.getSize();
+        String searchKey = queryIndexArticlePageListReqVO.getSearchKey();
+
+        if (StringUtils.isEmpty(searchKey)) {
+            return queryIndexArticlePageList(queryIndexArticlePageListReqVO);
+        }
+
+        IPage<ArticleDO> articleDOIPage = articleDao.queryArticlePageListBySearchKey(current, size, searchKey);
         List<ArticleDO> records = articleDOIPage.getRecords();
 
         List<QueryIndexArticlePageItemRspVO> list = null;
@@ -333,4 +401,5 @@ public class ArticleServiceImpl implements ArticleService {
         }
         return PageResponse.success(articleDOIPage, list);
     }
+
 }

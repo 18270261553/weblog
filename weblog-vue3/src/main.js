@@ -14,7 +14,6 @@ import "@/permission"
 // 代码高亮
 import hljs from 'highlight.js'
 import 'highlight.js/styles/tokyo-night-dark.css'
-
 // 富文本图片点击预览
 import "viewerjs/dist/viewer.css";
 import Viewer from "v-viewer";

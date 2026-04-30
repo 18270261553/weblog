@@ -1,50 +1,46 @@
 <template>
-    <!-- <header class="header-container bg-light-50">
-            <div class="container mx-auto">
-                <el-menu class="el-menu" mode="horizontal" :ellipsis="false" @select="handleSelect">
-                    <el-menu-item class="title-li">
-                        <a href="/" class="flex items-center title">
-                            <svg t="1682412971514" class="icon mr-2" viewBox="0 0 1025 1024" version="1.1"
-                                xmlns="http://www.w3.org/2000/svg" p-id="5350" width="30" height="30">
-                                <path
-                                    d="M653.312248 611.118466 370.992731 611.118466c-26.144681 0-47.286367 21.249278-47.286367 47.286367s21.195482 47.340163 47.286367 47.340163l282.319517 0c26.03709 0 47.232572-21.303073 47.232572-47.340163C700.491024 632.367744 679.349337 611.118466 653.312248 611.118466zM439.743558 415.409929l144.602679 0c26.03709 0 47.286367-21.249278 47.286367-47.178776 0-26.090885-21.249278-47.393958-47.286367-47.393958L439.743558 320.837195c-26.090885 0-47.232572 21.303073-47.232572 47.393958C392.457191 394.160651 413.598878 415.409929 439.743558 415.409929zM819.809752 0.107591C619.098221 0 418.332894 0.107591 217.567567 0 198.577706 0 180.01821 1.452482 161.297328 5.594747c-95.272078 20.926504-158.750932 101.888941-159.988232 197.429997C-1.111708 400.831311 0.555957 598.476491 0.609752 796.175466c0 22.378986 0.968322 44.220016 6.186499 66.545206 21.948621 93.012661 98.768794 158.15918 197.860362 160.25721 102.373102 1.990439 204.907591 0.430365 307.226898 0.430365 98.82259 0 197.752771-0.107591 296.575361 0.107591 19.043656 0.053796 37.441765-1.560074 56.216443-5.863725 94.62653-21.84103 159.288889-101.996533 159.342685-199.36664 0.053796-204.853796 0.107591-409.707591 0-614.561387C1023.964205 90.43047 933.426143 0.161387 819.809752 0.107591zM910.670588 497.179301l0 135.780194 0 30.125558c0 137.501655-111.356974 248.858629-248.912424 248.858629L519.845266 911.943683 391.219892 911.943683 362.277837 911.943683c-137.55545 0-248.912424-111.356974-248.912424-248.858629L113.365413 361.022537c0-137.447859 111.356974-248.858629 248.912424-248.858629l68.535645 0 88.977988 0 4.787812 0c0 0.107591 0 0.107591 0 0.107591 135.296034 2.528395 244.178408 112.863252 244.178408 248.751038l0 3.81949 0 20.442343c0 15.062779 12.265406 27.274389 27.166798 27.274389l28.404098 0 13.717888 0c40.077752 0 72.570318 32.492566 72.570318 72.624113L910.670588 497.179301 910.670588 497.179301z"
-                                    p-id="5351" fill="#1296db"></path>
-                            </svg>
-                            {{ $store.state.setting.blogName }}
-                        </a>
-                    </el-menu-item>
-                    <div class="flex-grow"></div>
-                    <el-menu-item @click="$router.push('/category')">分类</el-menu-item>
-                    <el-menu-item @click="$router.push('/tag')">标签</el-menu-item>
-                    <el-menu-item v-if="isLogin == false" @click="$router.push('/login')">登录</el-menu-item>
-                    <el-sub-menu index="2" v-else>
-                        <template #title>
-                            <el-avatar :size="30" :src="$store.state.setting.avatar" class="mr-2"/>
-                            {{ $store.state.user.username }}
-                        </template>
-                        <el-menu-item index="2-1" @click="$router.push('/admin')" class="bg-gray-hover">
-                            <el-icon><Monitor /></el-icon>
-                            进入后台
-                        </el-menu-item>
-                        <el-menu-item index="2-2" @click="logout" class="bg-gray-hover">
-                            <svg t="1688554592591" class="icon mr-2 ml-1" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2307" 
-                            width="18" height="18"><path d="M874.666667 855.744a19.093333 19.093333 0 0 1-19.136 18.922667H168.469333A19.2 19.2 0 0 1 149.333333 855.530667V168.469333A19.2 19.2 0 0 1 168.469333 149.333333h687.061334c10.581333 0 19.136 8.533333 19.136 18.922667V320h42.666666V168.256A61.717333 61.717333 0 0 0 855.530667 106.666667H168.469333A61.866667 61.866667 0 0 0 106.666667 168.469333v687.061334A61.866667 61.866667 0 0 0 168.469333 917.333333h687.061334A61.76 61.76 0 0 0 917.333333 855.744V704h-42.666666v151.744zM851.84 533.333333l-131.797333 131.754667a21.141333 21.141333 0 0 0 0.213333 29.973333 21.141333 21.141333 0 0 0 29.973333 0.192l165.589334-165.589333a20.821333 20.821333 0 0 0 6.122666-14.976 21.44 21.44 0 0 0-6.314666-14.997333l-168.533334-168.533334a21.141333 21.141333 0 0 0-29.952-0.213333 21.141333 21.141333 0 0 0 0.213334 29.973333L847.296 490.666667H469.333333v42.666666h382.506667z" fill="#8a8a8a" p-id="2308"></path></svg>                            退出登录
-                        </el-menu-item>
-                    </el-sub-menu>
-                </el-menu>
-            </div>
-        </header> -->
+
     <header class="sticky top-0 z-100">
 
-        <nav class="bg-white border-gray-200 border-b dark:bg-gray-900">
+        <nav class="bg-white border-gray-200 border-b dark:bg-black dark:border-gray-800">
             <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
                 <a href="/" class="flex items-center">
-                    <img src="https://flowbite.com/docs/images/logo.svg" class="h-8 mr-3" alt="Flowbite Logo" />
+                    <img src="@/assets/logo2.png" class="h-8 mr-3" alt="Flowbite Logo" style="width: 66px;height: 64px" />
                     <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">{{
                         $store.state.setting.blogName }}</span>
                 </a>
 
                 <div class="flex items-center md:order-2">
+                  <!-- 暗黑模式切换按钮 -->
+                  <button
+                      @click="toggleDarkMode"
+                      class="mr-3 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg p-2.5"
+                  >
+                    <svg
+                        class="w-5 h-5"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        :class="isDarkMode ? 'hidden' : ''"
+                    >
+                      <!-- 太阳图标 -->
+                      <path d="M10 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-11a1 1 0 0 0 1-1V1a1 1 0 0 0-2 0v2a1 1 0 0 0 1 1Zm0 12a1 1 0 0 0-1 1v2a1 1 0 1 0 2 0v-2a1 1 0 0 0-1-1ZM4.34 5.76a1 1 0 0 0 1.42-1.42L4.34 2.92a1 1 0 0 0-1.42 1.42l1.42 1.42Zm11.32 8.48a1 1 0 0 0-1.42-1.42l-1.42 1.42a1 1 0 0 0 1.42 1.42l1.42-1.42ZM4 10a1 1 0 0 0-1-1H1a1 1 0 0 0 0 2h2a1 1 0 0 0 1-1Zm15-1h-2a1 1 0 1 0 0 2h2a1 1 0 0 0 0-2ZM5.76 15.66a1 1 0 0 0-1.42 0 1 1 0 0 0 0 1.42l1.42 1.42a1 1 0 0 0 1.42-1.42l-1.42-1.42Zm8.48-11.32a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42l-1.42-1.42a1 1 0 0 0-1.42 1.42l1.42 1.42Z"/>
+                    </svg>
+                    <svg
+                        class="w-5 h-5"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        :class="!isDarkMode ? 'hidden' : ''"
+                    >
+                      <!-- 月亮图标 -->
+                      <path d="M17.75 19.25a1 1 0 0 1-1.41 0 8.98 8.98 0 0 0 4.74-7.46 1 1 0 0 1 1.59.93 10.98 10.98 0 0 1-5.92 8.49Zm-2.01-2.26a8.97 8.97 0 0 1-7.74-4.33 1 1 0 1 1 1.82-.8 6.98 6.98 0 0 0 6.05 3.42 1 1 0 0 1 .11 1.71ZM10 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-12a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z"/>
+                    </svg>
+                    <span class="sr-only">切换暗黑模式</span>
+                  </button>
+
                     <div class="flex mr-3">
                         <button type="button" data-collapse-toggle="navbar-search" aria-controls="navbar-search"
                             aria-expanded="false"
@@ -57,17 +53,67 @@
                             <span class="sr-only">搜索</span>
                         </button>
                         <div class="relative hidden md:block">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
-                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                                </svg>
-                                <span class="sr-only">Search icon</span>
+                            <div class="flex items-center">
+                                <div class="relative flex-1">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                                stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                        </svg>
+                                        <span class="sr-only">Search icon</span>
+                                    </div>
+                                    <input type="text" id="search-navbar" v-model="searchKeyword"
+                                        @input="handleSearchInput"
+                                        @keyup.down="navigateSuggestions('down')"
+                                        @keyup.up="navigateSuggestions('up')"
+                                        @keyup.enter="handleSearchEnter"
+                                        @focus="handleSearchFocus"
+                                        @blur="hideSuggestions"
+                                        class="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-l-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="搜索文章...">
+
+                                    <!-- 搜索建议下拉列表 -->
+                                    <div v-if="showSuggestions && searchSuggestions.length > 0"
+                                        class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                                        <div v-for="(item, index) in searchSuggestions" :key="item.id"
+                                            @click="goToArticle(item.id)"
+                                            @mouseenter="activeSuggestionIndex = index"
+                                            :class="['px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-blue-50',
+                                                    activeSuggestionIndex === index ? 'bg-blue-50' : '']">
+                                            <div class="flex items-start">
+                                                <img v-if="item.titleImage" :src="item.titleImage"
+                                                    class="w-12 h-12 object-cover rounded mr-3 flex-shrink-0">
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-medium text-gray-900 truncate">{{ item.title }}</p>
+                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-1">{{ item.description }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="px-4 py-2 text-xs text-gray-400 text-center bg-gray-50">
+                                            共 {{ searchSuggestionsTotal }} 条结果，点击查看更多
+                                        </div>
+                                    </div>
+
+                                    <!-- 无结果提示 -->
+                                    <div v-if="showSuggestions && searchKeyword && searchSuggestions.length === 0 && !searching"
+                                        class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 px-4 py-3 text-center text-gray-500 text-sm">
+                                        未找到相关文章
+                                    </div>
+
+                                    <!-- 加载中 -->
+                                    <div v-if="searching"
+                                        class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 px-4 py-3 text-center text-gray-500 text-sm">
+                                        搜索中...
+                                    </div>
+                                </div>
+
+                                <!-- 确定按钮 -->
+                                <button @click="handleSearchClick"
+                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                                    确定
+                                </button>
                             </div>
-                            <input type="text" id="search-navbar"
-                                class="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                placeholder="搜索待开发...">
                         </div>
                         <button data-collapse-toggle="navbar-search" type="button"
                             class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
@@ -124,16 +170,51 @@
                 </div>
                 <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-search">
                     <div class="relative mt-3 md:hidden">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                            </svg>
+                        <div class="flex items-center">
+                            <div class="relative flex-1">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                    </svg>
+                                </div>
+                                <input type="text" id="search-navbar" v-model="searchKeyword"
+                                    @input="handleSearchInput"
+                                    @keyup.down="navigateSuggestions('down')"
+                                    @keyup.up="navigateSuggestions('up')"
+                                    @keyup.enter="handleSearchEnter"
+                                    @focus="handleSearchFocus"
+                                    @blur="hideSuggestions"
+                                    class="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-l-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    placeholder="搜索文章...">
+
+                                <!-- 移动端搜索建议下拉列表 -->
+                                <div v-if="showSuggestions && searchSuggestions.length > 0"
+                                    class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                                    <div v-for="(item, index) in searchSuggestions" :key="item.id"
+                                        @click="goToArticle(item.id)"
+                                        @mouseenter="activeSuggestionIndex = index"
+                                        :class="['px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-blue-50',
+                                                activeSuggestionIndex === index ? 'bg-blue-50' : '']">
+                                        <div class="flex items-start">
+                                            <img v-if="item.titleImage" :src="item.titleImage"
+                                                class="w-12 h-12 object-cover rounded mr-3 flex-shrink-0">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate">{{ item.title }}</p>
+                                                <p class="text-xs text-gray-500 mt-1 line-clamp-1">{{ item.description }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 移动端确定按钮 -->
+                            <button @click="handleSearchClick"
+                                class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                                确定
+                            </button>
                         </div>
-                        <input type="text" id="search-navbar"
-                            class="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="搜索待开发...">
                     </div>
                     <ul
                         class="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
@@ -166,6 +247,13 @@
                                 归档
                             </a>
                         </li>
+                      <li>
+                        <a @click="$router.push('/aiChatbot')"
+                           :class="[currPath == '/aiChatbot' ? 'text-blue-700' : 'text-gray-900']"
+                           class="block py-2 pl-3 pr-4 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700">
+                          AI搜索
+                        </a>
+                      </li>
                     </ul>
                 </div>
             </div>
@@ -210,33 +298,158 @@
 
 <script setup>
 import { useStore } from 'vuex'
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { showModel, showMessage } from '@/composables/util'
 import { onMounted } from 'vue'
 import { initDropdowns, initCollapses, initModals } from 'flowbite'
+import { searchArticles } from '@/api/frontend/search'
 
-
+// 暗黑模式状态
+const isDarkMode = ref(localStorage.getItem('darkMode') === 'true');
 // initialize components based on data attribute selectors
 onMounted(() => {
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
     initCollapses();
     initDropdowns();
     initModals();
 })
 
+// 切换白天/黑夜
+const toggleDarkMode = () => {
+  isDarkMode.value = !isDarkMode.value;
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('darkMode', 'true');
+  } else {
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('darkMode', 'false');
+  }
+};
 const store = useStore()
 const route = useRoute()
+const router = useRouter()
 
 const currPath = ref(route.path)
+const searchKeyword = ref('')
+const searchSuggestions = ref([])
+const searchSuggestionsTotal = ref(0)
+const showSuggestions = ref(false)
+const searching = ref(false)
+const activeSuggestionIndex = ref(-1)
+let searchTimer = null
 
-console.log(store.state.user)
 const keys = Object.keys(store.state.user)
-console.log('====== keys')
-console.log(keys)
 const isLogin = ref(keys.length > 0)
 
+// 获取焦点时显示建议
+const handleSearchFocus = () => {
+    if (searchKeyword.value.trim() && searchSuggestions.value.length > 0) {
+        showSuggestions.value = true
+    }
+}
+
+// 防抖搜索
+const handleSearchInput = () => {
+    if (searchTimer) {
+        clearTimeout(searchTimer)
+    }
+
+    if (!searchKeyword.value.trim()) {
+        searchSuggestions.value = []
+        showSuggestions.value = false
+        return
+    }
+
+    searching.value = true
+    searchTimer = setTimeout(() => {
+        fetchSearchSuggestions()
+    }, 300)
+}
+
+// 获取搜索建议
+const fetchSearchSuggestions = () => {
+    searchArticles({
+        current: 1,
+        size: 5,
+        searchKey: searchKeyword.value.trim()
+    }).then((res) => {
+        searching.value = false
+        if (res.success && res.data) {
+            searchSuggestions.value = res.data
+            searchSuggestionsTotal.value = res.total || 0
+            showSuggestions.value = true
+            activeSuggestionIndex.value = -1
+        }
+    }).catch(() => {
+        searching.value = false
+    })
+}
+
+// 键盘导航
+const navigateSuggestions = (direction) => {
+    if (!showSuggestions.value || searchSuggestions.value.length === 0) {
+        if (direction === 'down' && searchKeyword.value.trim()) {
+            showSuggestions.value = true
+            fetchSearchSuggestions()
+        }
+        return
+    }
+
+    if (direction === 'down') {
+        activeSuggestionIndex.value = Math.min(
+            activeSuggestionIndex.value + 1,
+            searchSuggestions.value.length - 1
+        )
+    } else if (direction === 'up') {
+        activeSuggestionIndex.value = Math.max(
+            activeSuggestionIndex.value - 1,
+            -1
+        )
+    }
+}
+
+// 回车处理
+const handleSearchEnter = () => {
+    if (activeSuggestionIndex.value >= 0 && searchSuggestions.value[activeSuggestionIndex.value]) {
+        // 如果选中了某个建议项，直接跳转
+        goToArticle(searchSuggestions.value[activeSuggestionIndex.value].id)
+    } else if (searchKeyword.value.trim()) {
+        // 否则跳转到搜索结果页
+        handleSearchClick()
+    }
+}
+
+// 点击确定按钮
+const handleSearchClick = () => {
+    if (!searchKeyword.value.trim()) {
+        showMessage('请输入搜索关键词', 'warning')
+        return
+    }
+    router.push({ path: '/search', query: { key: searchKeyword.value.trim() } })
+    searchKeyword.value = ''
+    showSuggestions.value = false
+}
+
+// 跳转到文章详情
+const goToArticle = (articleId) => {
+    router.push({ path: '/article/detail', query: { articleId: articleId } })
+    searchKeyword.value = ''
+    showSuggestions.value = false
+}
+
+// 隐藏建议列表
+const hideSuggestions = () => {
+    setTimeout(() => {
+        showSuggestions.value = false
+    }, 200)
+}
+
 const logout = () => {
-    console.log('登出')
     store.dispatch('logout')
 
     // 提示登出成功
@@ -305,4 +518,12 @@ const logout = () => {
 .bg-gray-hover:hover {
     border-bottom: 1px solid #fff !important;
     background-color: #f4f4f5 !important;
-}</style>
+}
+
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>

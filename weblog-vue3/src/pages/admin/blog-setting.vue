@@ -10,7 +10,7 @@
             <el-form-item label="作者头像" prop="avatar">
                 <el-upload class="avatar-uploader" action="#" :on-change="handleTitleImageChange" :auto-upload="false"
                     :show-file-list="false" :on-success="handleAvatarSuccess">
-                    <img v-if="form.avatar" :src="form.avatar" class="avatar" />
+                    <img v-if="form.avatar" :src="form.avatar" class="avatar" width="200px" height="200px"/>
                     <el-icon v-else class="avatar-uploader-icon">
                         <Plus />
                     </el-icon>
@@ -105,8 +105,7 @@ const zhihuSwitchChange = (e) => {
 }
 
 const handleTitleImageChange = (file) => {
-    console.log('开始上传文件')
-    console.log(file)
+
     let formData = new FormData()
     formData.append("file", file.raw);
     uploadFile(formData).then((e) => {

@@ -13,6 +13,18 @@ spring:
     multipart:
       # 限制上传文件大小
       max-file-size: 10MB
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+      exclude: static/**,public/**
+      poll-interval: 300ms    # 每 0.3 秒检查一次文件变化
+      quiet-period: 200ms     # 编译后 0.2 秒就重启
+    livereload:
+      enabled: true
+      
+# 解决多模块项目 DevTools 类加载问题
+spring.devtools.restart.additional-exclude: WEB-INF/**
       
 jwt:
   # 签发人
@@ -30,14 +42,27 @@ jwt:
 #=================================================================
 # minio (上传图片需要，需配置成自己的地址)
 #=================================================================
-minio:
-  endpoint: https://img.xxx.com
-  accessKey: xxx
-  secretKey: xxx
-  bucketName: xxx
 
+minio:
+  endpoint: http://127.0.0.1:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: weblog
 #=================================================================
 # IP归属地信息库文件路径 ip2region.xdb
 #=================================================================
 xdb:
-  profile: xxx
+  profile: classpath:ip2region.xdb
+# AI配置
+# AI配置
+# DeepSeek 配置
+deepseek:
+  api-key: ${DEEPSEEK_API_KEY:}  # 从环境变量读取
+  api-url: https://api.deepseek.com
+  model: deepseek-chat
+
+ai:
+  enabled: true
+  timeout: 90000
+  max-tokens: 1024
+  temperature: 0.7

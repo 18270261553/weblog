@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface AdminUserRoleDao {
     List<UserRoleDO> selectByUsername(String username);
+
+    void insert(UserRoleDO userRoleDO);
 }

@@ -29,4 +29,8 @@ public class AdminUserRoleDaoImpl implements AdminUserRoleDao {
         wrapper.lambda().eq(UserRoleDO::getUsername, username);
         return userRoleMapper.selectList(wrapper);
     }
+    @Override
+    public void insert(UserRoleDO userRoleDO) {
+        userRoleMapper.insert(userRoleDO);
+    }
 }

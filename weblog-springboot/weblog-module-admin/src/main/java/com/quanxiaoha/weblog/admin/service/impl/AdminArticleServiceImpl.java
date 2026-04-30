@@ -19,12 +19,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
- * @date: 2023-04-17 12:08
- * @description: TODO
- **/
 @Service
 @Slf4j
 public class AdminArticleServiceImpl implements AdminArticleService {
@@ -40,7 +34,6 @@ public class AdminArticleServiceImpl implements AdminArticleService {
     @Autowired
     private AdminArticleTagRelDao articleTagRelDao;
 
-    // 手动事务
     private final TransactionTemplate transactionTemplate;
 
     @Autowired
@@ -67,15 +60,12 @@ public class AdminArticleServiceImpl implements AdminArticleService {
                     .build();
             articleContentDao.insertArticleContent(articleContentDO);
 
-            // 所属分类
             ArticleCategoryRelDO articleCategoryRelDO = ArticleCategoryRelDO.builder()
                     .articleId(articleId)
                     .categoryId(publishArticleReqVO.getCategoryId())
                     .build();
             articleCategoryRelDao.insert(articleCategoryRelDO);
 
-            // 标签
-            // 提交的标签
             List<String> publishTags = publishArticleReqVO.getTags();
             handleTagBiz(articleId, publishTags);
             return true;
@@ -84,30 +74,41 @@ public class AdminArticleServiceImpl implements AdminArticleService {
         return isExecuteSuccess ? Response.success() : Response.fail();
     }
 
+    // ===================== 【修复点：判空！！！】 =====================
     @Override
     public Response queryArticleDetail(QueryArticleDetailReqVO queryArticleDetailReqVO) {
         Long articleId = queryArticleDetailReqVO.getArticleId();
         ArticleDO articleDO = articleDao.queryByArticleId(articleId);
+
+        if (articleDO == null) {
+            return Response.fail("文章不存在");
+        }
+
+        // 文章内容 判空
         ArticleContentDO articleContentDO = articleContentDao.queryByArticleId(articleId);
+        String content = articleContentDO == null ? "" : articleContentDO.getContent();
 
-        // 所属分类
+        // 分类 判空
         ArticleCategoryRelDO articleCategoryRelDO = articleCategoryRelDao.selectByArticleId(articleId);
+        Long categoryId = articleCategoryRelDO == null ? null : articleCategoryRelDO.getCategoryId();
 
-        // 对应标签
+        // 标签
         List<ArticleTagRelDO> articleTagRelDOS = articleTagRelDao.selectByArticleId(articleId);
-        List<Long> tagIds = articleTagRelDOS.stream().map(p -> p.getTagId()).collect(Collectors.toList());
+        List<Long> tagIds = CollectionUtils.isEmpty(articleTagRelDOS)
+                ? Lists.newArrayList()
+                : articleTagRelDOS.stream().map(ArticleTagRelDO::getTagId).collect(Collectors.toList());
 
-        QueryArticleDetailRspVO queryArticleDetailRspVO = QueryArticleDetailRspVO.builder()
+        QueryArticleDetailRspVO rsp = QueryArticleDetailRspVO.builder()
                 .id(articleDO.getId())
                 .title(articleDO.getTitle())
                 .titleImage(articleDO.getTitleImage())
-                .content(articleContentDO.getContent())
-                .categoryId(articleCategoryRelDO.getCategoryId())
+                .content(content) // 安全
+                .categoryId(categoryId) // 安全
                 .tagIds(tagIds)
                 .description(articleDO.getDescription())
                 .build();
 
-        return Response.success(queryArticleDetailRspVO);
+        return Response.success(rsp);
     }
 
     @Override
@@ -119,7 +120,6 @@ public class AdminArticleServiceImpl implements AdminArticleService {
         String searchTitle = queryArticlePageListReqVO.getSearchTitle();
 
         Page<ArticleDO> articleDOPage = articleDao.queryArticlePageList(current, size, startDate, endDate, searchTitle);
-
         return Response.success(articleDOPage);
     }
 
@@ -129,11 +129,12 @@ public class AdminArticleServiceImpl implements AdminArticleService {
         Long articleId = deleteArticleReqVO.getArticleId();
         articleDao.deleteById(articleId);
         articleContentDao.deleteByArticleId(articleId);
+        articleCategoryRelDao.deleteByArticleId(articleId);
+        articleTagRelDao.deleteByArticleId(articleId);
         return Response.success();
     }
 
     @Override
-    // @Transactional(rollbackFor = Exception.class)
     public Response updateArticle(UpdateArticleReqVO updateArticleReqVO) {
         boolean isExecuteSuccess = transactionTemplate.execute(status -> {
             Long articleId = updateArticleReqVO.getId();
@@ -153,7 +154,6 @@ public class AdminArticleServiceImpl implements AdminArticleService {
                     .build();
             articleContentDao.updateByArticleId(articleContentDO);
 
-            // 更新文章分类
             articleCategoryRelDao.deleteByArticleId(articleId);
             ArticleCategoryRelDO articleCategoryRelDO = ArticleCategoryRelDO.builder()
                     .articleId(articleId)
@@ -161,9 +161,7 @@ public class AdminArticleServiceImpl implements AdminArticleService {
                     .build();
             articleCategoryRelDao.insert(articleCategoryRelDO);
 
-            // 更新文章标签
             articleTagRelDao.deleteByArticleId(articleId);
-            // 提交的标签
             List<String> publishTags = updateArticleReqVO.getTags();
             handleTagBiz(articleId, publishTags);
             return true;
@@ -172,17 +170,10 @@ public class AdminArticleServiceImpl implements AdminArticleService {
         return isExecuteSuccess ? Response.success() : Response.fail();
     }
 
-    /**
-     * 处理标签相关业务
-     * @param articleId
-     * @param publishTags
-     */
     public void handleTagBiz(Long articleId, List<String> publishTags) {
         List<TagDO> tagDOS = tagDao.selectAll();
 
-        // 筛选出库中不存在的标签
         List<String> noExistTags = null;
-        // 库中已存在的标签
         List<String> existTags = null;
         if (!CollectionUtils.isEmpty(tagDOS)) {
             List<String> tagIds = tagDOS.stream().map(p -> String.valueOf(p.getId())).collect(Collectors.toList());
@@ -190,7 +181,6 @@ public class AdminArticleServiceImpl implements AdminArticleService {
             existTags = publishTags.stream().filter(p -> tagIds.contains(p)).collect(Collectors.toList());
         }
 
-        // 不存在的标签先入库
         if (!CollectionUtils.isEmpty(noExistTags)) {
             List<ArticleTagRelDO> articleTagRelDOS = Lists.newArrayList();
             noExistTags.forEach(noExistTag -> {
@@ -209,7 +199,6 @@ public class AdminArticleServiceImpl implements AdminArticleService {
                         .build();
                 articleTagRelDOS.add(articleTagRelDO);
             });
-
             articleTagRelDao.insertBatch(articleTagRelDOS);
         }
 
@@ -225,5 +214,4 @@ public class AdminArticleServiceImpl implements AdminArticleService {
             articleTagRelDao.insertBatch(articleTagRelDOS);
         }
     }
-
 }

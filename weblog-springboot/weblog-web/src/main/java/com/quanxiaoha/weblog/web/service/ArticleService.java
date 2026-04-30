@@ -19,4 +19,6 @@ public interface ArticleService {
 
     PageResponse queryTagArticlePageList(QueryTagArticlePageListReqVO queryTagArticlePageListReqVO);
 
+    PageResponse searchArticles(QueryIndexArticlePageListReqVO queryIndexArticlePageListReqVO);
+
 }

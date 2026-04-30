@@ -33,6 +33,16 @@ public class ArticleDaoImpl implements ArticleDao {
     }
 
     @Override
+    public IPage<ArticleDO> queryArticlePageListBySearchKey(long current, long size, String searchKey) {
+        Page<ArticleDO> page = new Page<>(current, size);
+        QueryWrapper<ArticleDO> wrapper = new QueryWrapper<>();
+        wrapper.lambda()
+                .like(ArticleDO::getTitle, searchKey)
+                .orderByDesc(ArticleDO::getCreateTime);
+        return articleMapper.selectPage(page, wrapper);
+    }
+
+    @Override
     public ArticleDO selectArticleById(Long articleId) {
         return articleMapper.selectById(articleId);
     }

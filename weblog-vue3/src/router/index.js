@@ -3,6 +3,7 @@ import AdminIndex from '@/pages/admin/index.vue';
 import About from '@/pages/about.vue';
 import NotFound from '@/pages/404.vue';
 import AdminLogin from '@/pages/admin/login.vue';
+import AdminRegister from '@/pages/admin/register.vue';
 import Admin from '@/layouts/admin.vue'
 import AdminArticleList from '@/pages/admin/article-list.vue'
 import AdminCategoryList from '@/pages/admin/category-list.vue'
@@ -15,13 +16,12 @@ import TagList from '@/pages/frontend/tag-list.vue'
 import CategoryArticleList from '@/pages/frontend/category-article-list.vue'
 import TagArticleList from '@/pages/frontend/tag-article-list.vue'
 import ArchiveList from '@/pages/frontend/archive-list.vue'
+import CommentList from "@/pages/admin/comment-list.vue";
 
 const routes = [
     {
-        // 指定访问路径
         path: '/admin',
         component: Admin,
-        // 使用到 admin.vue 布局的，都需要放置在其子路由下面
         children: [{
             path: '/admin',
             component: AdminIndex,
@@ -52,14 +52,21 @@ const routes = [
             meta: {
                 title: '博客设置'
             }
-        }]
+        }
+        , {
+            path: '/admin/comment/list',
+            component: CommentList,
+            meta: {
+                title: '评论管理'
+            }
+        }
+        ]
 
     },
     {
         path: '/about',
         component: About
     },
-    // 将匹配所有内容并将其放在 `$route.params.pathMatch` 下
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
@@ -70,6 +77,13 @@ const routes = [
         component: AdminLogin,
         meta: {
             title: '登录页'
+        }
+    },
+    {
+        path: '/register',
+        component: AdminRegister,
+        meta: {
+            title: '注册页'
         }
     },
     {
@@ -116,18 +130,27 @@ const routes = [
     },
     {
         path: '/archive',
-        component: ArchiveList,
-        meta: {
-            title: '归档'
-        },
+        name: 'Archive',
+        component: () => import('@/pages/frontend/archive.vue'),
+        meta: { title: '归档' }
+    },
+    {
+        path: '/aiChatbot',
+        name: 'aiChatbot',
+        component: () => import('@/pages/frontend/aiChatbot.vue'),
+        meta: { title: 'AI搜索' }
+    },
+    {
+        path: '/search',
+        name: 'Search',
+        component: () => import('@/pages/frontend/search.vue'),
+        meta: { title: '搜索结果' }
     }
 ]
 
 const router = createRouter({
-    // 4. 内部提供了 history 模式的实现。为了简单起见，我们在这里使用 hash 模式。
     history: createWebHashHistory(),
-    routes, // `routes: routes` 的缩写
+    routes,
 })
 
-// ES6 模块导出语句，它用于将 router 对象导出，以便其他文件可以导入和使用这个对象
 export default router

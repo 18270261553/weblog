@@ -15,6 +15,7 @@
                     <el-icon>
                         <component :is="item.icon"></component>
                     </el-icon>
+
                     <span>{{ item.name }}</span>
                 </el-menu-item>
             </template>
@@ -61,6 +62,12 @@ const menus = [{
     'path': '/admin/tag/list',
     'child': []
 },
+  {
+    'name': '评论管理',
+    'icon': 'Comment',
+    'path': '/admin/comment/list',
+    'child': []
+  },
 // {
 //     'name': '轮播图管理',
 //     'icon': 'Picture',
@@ -76,9 +83,6 @@ const menus = [{
 ]
 
 const handleSelect = (e) => {
-    console.log(defaultActive)
-    console.log(route.path)
-
     router.push(e)
 }
 </script>

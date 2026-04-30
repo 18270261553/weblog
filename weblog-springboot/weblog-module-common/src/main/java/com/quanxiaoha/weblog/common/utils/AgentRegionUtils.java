@@ -6,7 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.lionsoul.ip2region.xdb.Searcher;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -66,24 +69,60 @@ public class AgentRegionUtils {
      * @return 返回归属地结果
      */
     public static String getIpRegion(String ip, String xdbPath) {
-        // 1、创建 searcher 对象
+        if (ip == null || ip.isEmpty()) {
+            return "未知";
+        }
+        
+        if (ip.contains(":")) {
+            log.debug("IPv6 address detected: {}, skipping region lookup", ip);
+            return "本地访问";
+        }
+        
+        String actualXdbPath = xdbPath;
+        
+        if (xdbPath != null && xdbPath.startsWith("classpath:")) {
+            try {
+                String resourcePath = xdbPath.substring("classpath:".length());
+                InputStream inputStream = AgentRegionUtils.class.getClassLoader().getResourceAsStream(resourcePath);
+                if (inputStream == null) {
+                    log.error("failed to find xdb file from classpath: {}", xdbPath);
+                    return "外太空";
+                }
+                
+                File tempFile = File.createTempFile("ip2region_", ".xdb");
+                tempFile.deleteOnExit();
+                
+                try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                }
+                inputStream.close();
+                actualXdbPath = tempFile.getAbsolutePath();
+                log.debug("extracted xdb file from classpath to: {}", actualXdbPath);
+            } catch (IOException e) {
+                log.error("failed to extract xdb file from classpath: {}", xdbPath, e);
+                return "外太空";
+            }
+        }
+        
         String country = "中国";
         String hdu = "0";
         Searcher searcher;
         try {
-            searcher = Searcher.newWithFileOnly(xdbPath);
+            searcher = Searcher.newWithFileOnly(actualXdbPath);
         } catch (IOException e) {
-            log.error("failed to create searcher with {}: {}\n", xdbPath, e);
+            log.error("failed to create searcher with {}: {}\n", actualXdbPath, e);
             return "外太空";
         }
 
-        // 2、查询 ip = "175.24.184.183";
         try {
             String region = searcher.search(ip);
             region = region.replace("|", " ");
             String[] cityList = region.split(" ");
             if (cityList.length > 0) {
-                // 国内的显示到具体的省
                 if (country.equals(cityList[0])) {
                     if (cityList.length > 1) {
                         log.info(cityList[0]+"-"+cityList[2]+"-"+cityList[3]+"-"+cityList[4]);
@@ -92,7 +131,6 @@ public class AgentRegionUtils {
                 } else if (hdu.equals(cityList[0])) {
                     return "中国-浙江省-杭州市-HDU";
                 } else {
-                    // 国外显示到国家城市
                     if (cityList.length > 1) {
                         return cityList[0]+"-"+cityList[2];
                     }
@@ -101,17 +139,14 @@ public class AgentRegionUtils {
             }
         } catch (Exception e) {
             log.error("failed to search({}): {}\n", ip, e);
-            throw new BizException(ResponseCodeEnum.AGENT_REGION_SEARCH_ERROR);
+            return "未知";
         } finally {
-            // 3、关闭资源
             try {
                 searcher.close();
             } catch (IOException e) {
                 log.error("failed to close searcher:", e);
             }
         }
-
-        // 备注：并发使用，每个线程需要创建一个独立的 searcher 对象单独使用。
 
         return "未知";
     }

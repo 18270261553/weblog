@@ -34,4 +34,10 @@ public class IndexController {
     public PageResponse queryArticlePageList(@RequestBody QueryIndexArticlePageListReqVO queryArticlePageListReqVO) {
         return articleService.queryIndexArticlePageList(queryArticlePageListReqVO);
     }
+
+    @PostMapping("/article/search")
+    @ApiOperationLog(description = "搜索文章")
+    public PageResponse searchArticles(@RequestBody QueryIndexArticlePageListReqVO queryArticlePageListReqVO) {
+        return articleService.searchArticles(queryArticlePageListReqVO);
+    }
 }

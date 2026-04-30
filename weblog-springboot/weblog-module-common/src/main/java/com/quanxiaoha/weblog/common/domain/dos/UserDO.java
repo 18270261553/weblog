@@ -18,5 +18,5 @@ public class UserDO {
     private String password;
     private Date createTime;
     private Date updateTime;
-    private Boolean isDeleted;
+    private boolean isDeleted;
 }
