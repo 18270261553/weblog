@@ -4,8 +4,6 @@
 
 一款由 Spring Boot + Vue 3.2 + Vite 4.3 开发的前后端分离博客。
 
-![Weblog 后台仪表盘](https://img.quanxiaoha.com/quanxiaoha/168887767469647 "Weblog 后台仪表盘")
-
 - 后端采用 Spring Boot 、Mybatis Plus 、MySQL 、Spring Sericuty、JWT、Minio、Guava 等；
 - 后台管理基于 Vue 3.2 + Vite + Element Plus 纯手动搭建的管理后台，未采用任何 Admin 框架；
 - 支持博客 Markdown 格式发布与编辑、文章分类、文章标签的管理；
@@ -14,31 +12,20 @@
 
 ## 相关地址
 
-- GitHub 地址：[https://github.com/weiwosuoai/WeBlog](https://github.com/weiwosuoai/WeBlog)
-- Gitee 地址：[https://gitee.com/AllenJiang/WeBlog](https://gitee.com/AllenJiang/WeBlog)
-- 演示地址：http://116.62.199.48/
-  - 游客账号：test
-  - 游客密码：test
-   > PS: 演示环境的服务器配置很低，带宽很小，若打开速度较慢，你可以部署到本地来访问哟~
-  
+
 
 ## 演示截图
 
 ### 登录页
 
-![Weblog 登录界面](https://img.quanxiaoha.com/quanxiaoha/168887753888612 "Weblog 登录界面")
 
 ### 仪表盘
 
-![Weblog 后台仪表盘](https://img.quanxiaoha.com/quanxiaoha/168887767469647 "Weblog 后台仪表盘")
 
 ### 文章管理
 
-![Weblog 文章管理](https://img.quanxiaoha.com/quanxiaoha/168888895520650 "Weblog 文章管理")
 
 ### 写博客
-
-![写博客](https://img.quanxiaoha.com/quanxiaoha/168887786123214 "写博客")
 
 ### 前台首页
 
@@ -46,11 +33,7 @@
 
 ### 博客详情
 
-![博客详情页](https://img.quanxiaoha.com/quanxiaoha/168950345381866 "博客详情页")
-
 ### 归档页
-
-![Weblog 归档页](https://img.quanxiaoha.com/quanxiaoha/168950349918012 "Weblog 归档页")
 
 ## 功能
 
@@ -62,9 +45,9 @@
 | 分类列表    | ✅        |
 | 标签标签    | ✅        |
 | 博客详情    | ✅        |
-| 站内搜索    | TODO     |
+| 站内搜索    | ✅    |
 | 知识库 Wiki | TODO     |
-| 博客评论    | TODO     |
+| 博客评论    | ✅     |
 
 ### 后台
 
@@ -76,11 +59,9 @@
 | 分类管理   | ✅        |
 | 标签管理   | ✅        |
 | 博客设置   | ✅        |
-| 评论管理   | TODO     |
+| 评论管理   | ✅       |
 
 ## 模块介绍
-
-![WeBlog 项目模块一览](https://img.quanxiaoha.com/quanxiaoha/169077198059341 "WeBlog 项目模块一览")
 
 | 项目名            | 说明                                             |
 | ----------------- | ------------------------------------------------ |
@@ -135,13 +116,3 @@
 | axios        | 基于 Promise 的网络请求库       | 1.3.5   |
 | Echarts      | 百度开源的数据可视化图表库      | 5.4.2   |
 
-## 数据库初始化脚本
-
-初始化脚本位于  `sql`  模块中，目录如下：
-
-![](https://img.quanxiaoha.com/quanxiaoha/169077045489682)
-
-小伙伴们在部署时，请先新建一个名为 `weblog` 的库，然后依次执行 `schema.sql` 和 `data.sql` 即可：
-
-- `schema.sql` : 表结构脚本；
-- `data.sql` : 初始化数据脚本，如登录用户信息、博客基本设置信息等；

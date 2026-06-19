@@ -17,18 +17,35 @@ import CategoryArticleList from '@/pages/frontend/category-article-list.vue'
 import TagArticleList from '@/pages/frontend/tag-article-list.vue'
 import ArchiveList from '@/pages/frontend/archive-list.vue'
 import CommentList from "@/pages/admin/comment-list.vue";
-
+import dataCenter from "@/pages/admin/data-center.vue"
+import screenView from "@/pages/admin/screenView.vue"
 const routes = [
     {
         path: '/admin',
         component: Admin,
-        children: [{
+        children: [
+            {
+                path: '/data/center',
+                component: dataCenter,
+                meta: {
+                    title: '数据中心'
+                }
+            },
+            {
+                path: '/screenView',
+                component: screenView,
+                meta: {
+                    title: '中控大屏'
+                }
+            },
+            {
             path: '/admin',
             component: AdminIndex,
             meta: {
                 title: '仪表盘'
             }
-        }, {
+        },
+            {
             path: '/admin/article/list',
             component: AdminArticleList,
             meta: {

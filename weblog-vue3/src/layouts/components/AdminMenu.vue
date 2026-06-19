@@ -38,7 +38,14 @@ const defaultActive = ref(route.path)
 // 是否折叠
 const isCollapse = computed(() =>  !(store.state.menuWidth == '250px'))
 
-const menus = [{
+const menus = [
+  {
+    'name': '数据中心',
+    'icon': 'Monitor',
+    'path': '/data/center',
+    'child': []
+  },
+    {
     'name': '仪表盘',
     'icon': 'Monitor',
     'path': '/admin',
