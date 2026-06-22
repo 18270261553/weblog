@@ -1,6 +1,33 @@
 <script setup>
 import { onMounted, ref, nextTick } from 'vue'
 
+import * as echarts from 'echarts/core'
+import { BarChart, LineChart, PieChart, EffectScatterChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  GeoComponent,
+  VisualMapComponent
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+// 注册所有需要的组件
+echarts.use([
+  BarChart,
+  LineChart,
+  PieChart,
+  EffectScatterChart,
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  GeoComponent,
+  VisualMapComponent,
+  CanvasRenderer
+])
+
 // 核心静态数据
 const coreData = ref({
   onlineUser: 168,
@@ -29,11 +56,19 @@ onMounted(() => {
   })
 })
 
+// ⚠️ 注意：地图需要额外的数据文件，这里使用 window.echarts 作为备选
+// 如果地图显示不出来，需要在 main.js 中全局注册地图数据
 const initAllCharts = () => {
-  const echarts = window.echarts
+  // 如果按需导入的 echarts 没有地图功能，降级使用 window.echarts
+  const ec = (typeof echarts !== 'undefined' && echarts.init) ? echarts : window.echarts
+
+  if (!ec || !ec.init) {
+    console.warn('ECharts 未加载')
+    return
+  }
 
   // 1. 全国用户分布地图
-  mapChart = echarts.init(document.getElementById('map-chart'))
+  mapChart = ec.init(document.getElementById('map-chart'))
   const mapData = [
     { name: '北京', value: 2542 },
     { name: '上海', value: 3251 },
@@ -95,7 +130,7 @@ const initAllCharts = () => {
   })
 
   // 2. 24小时访问趋势
-  trendChart = echarts.init(document.getElementById('trend-chart'))
+  trendChart = ec.init(document.getElementById('trend-chart'))
   trendChart.setOption({
     backgroundColor: 'transparent',
     tooltip: { trigger: 'axis' },
@@ -116,7 +151,7 @@ const initAllCharts = () => {
       data: [120, 90, 80, 100, 150, 280, 350, 320, 380, 420, 390, 280, 200],
       type: 'bar',
       itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        color: new ec.graphic.LinearGradient(0, 0, 0, 1, [
           { offset: 0, color: '#00ffff' },
           { offset: 1, color: '#0091ff' }
         ])
@@ -125,7 +160,7 @@ const initAllCharts = () => {
   })
 
   // 3. 文章分类饼图
-  typeChart = echarts.init(document.getElementById('type-chart'))
+  typeChart = ec.init(document.getElementById('type-chart'))
   typeChart.setOption({
     backgroundColor: 'transparent',
     tooltip: { trigger: 'item' },
@@ -149,7 +184,7 @@ const initAllCharts = () => {
   })
 
   // 4. 热门文章TOP
-  rankChart = echarts.init(document.getElementById('rank-chart'))
+  rankChart = ec.init(document.getElementById('rank-chart'))
   rankChart.setOption({
     backgroundColor: 'transparent',
     tooltip: { trigger: 'axis' },
@@ -170,7 +205,7 @@ const initAllCharts = () => {
       data: [320, 302, 287, 260, 241, 238, 220],
       type: 'bar',
       itemStyle: {
-        color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+        color: new ec.graphic.LinearGradient(1, 0, 0, 0, [
           { offset: 0, color: '#0091ff' },
           { offset: 1, color: '#00ffff' }
         ])
@@ -179,7 +214,7 @@ const initAllCharts = () => {
   })
 
   // 5. 访问来源环形图
-  sourceChart = echarts.init(document.getElementById('source-chart'))
+  sourceChart = ec.init(document.getElementById('source-chart'))
   sourceChart.setOption({
     backgroundColor: 'transparent',
     tooltip: { trigger: 'item' },
@@ -201,7 +236,7 @@ const initAllCharts = () => {
   })
 
   // 6. 访问趋势预警
-  warnChart = echarts.init(document.getElementById('warn-chart'))
+  warnChart = ec.init(document.getElementById('warn-chart'))
   warnChart.setOption({
     backgroundColor: 'transparent',
     tooltip: { trigger: 'axis' },
@@ -248,7 +283,6 @@ const startAnimation = () => {
   }, 3000)
 }
 </script>
-
 <template>
   <div class="screen-container">
     <div class="stars"></div>

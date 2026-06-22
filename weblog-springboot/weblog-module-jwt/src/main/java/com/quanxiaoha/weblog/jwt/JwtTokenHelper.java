@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.Objects;
 
 /**
- * @author: 犬小哈
+ * @author: dgq
  * @from: 公众号：小哈学Java, 网站：www.quanxiaoha.com
  * @date: 2023-04-15 22:01
  * @version: v1.0.0

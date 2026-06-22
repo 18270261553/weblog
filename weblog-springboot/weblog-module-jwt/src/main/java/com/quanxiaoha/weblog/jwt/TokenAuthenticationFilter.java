@@ -1,22 +1,15 @@
 package com.quanxiaoha.weblog.jwt;
 
-import com.quanxiaoha.weblog.common.Response;
-import com.quanxiaoha.weblog.common.enums.ResponseCodeEnum;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jws;
+import com.quanxiaoha.weblog.common.cache.UserCacheService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.security.SecurityUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -24,14 +17,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Objects;
 
-/**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
- * @date: 2023-04-17 16:22
- * @description: Token 校验过滤器
- **/
 @Slf4j
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
@@ -41,37 +27,58 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private UserCacheService userCacheService;  // ← 新增
+
     @Value("${jwt.tokenPrefix}")
     private String tokenPrefix;
     @Value("${jwt.tokenHeaderKey}")
     private String tokenHeaderKey;
 
-
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader(tokenHeaderKey);
         if (StringUtils.startsWith(header, String.format("%s ", tokenPrefix))) {
             String token = StringUtils.substring(header, 7);
             log.info("token: {}", token);
+
             if (StringUtils.isNotBlank(token) && jwtTokenHelper.validateToken(token)) {
                 String username = jwtTokenHelper.getUsernameByToken(token);
 
                 if (StringUtils.isNotBlank(username)) {
-                    // && Objects.isNull(SecurityContextHolder.getContext().getAuthentication())
+                    UserDetails userDetails = null;
 
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    // ========== 1. 优先从 Redis 获取用户信息 ==========
+                    userDetails = userCacheService.getCachedUser(username);
 
-                    // 将用户信息存入 authentication，方便后续校验
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
-                            userDetails.getAuthorities());
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    // 将 authentication 存入 ThreadLocal，方便后续获取用户信息
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // ========== 2. 缓存未命中，从数据库加载 ==========
+                    if (userDetails == null) {
+                        log.info("缓存未命中，从数据库加载用户信息，username: {}", username);
+                        userDetails = userDetailsService.loadUserByUsername(username);
+                        // 加载后存入 Redis（下次直接用）
+                        if (userDetails != null) {
+                            userCacheService.cacheUser(userDetails);
+                        }
+                    } else {
+                        log.info("从缓存获取用户信息成功，username: {}", username);
+                    }
+
+                    // ========== 3. 设置到 SecurityContextHolder ==========
+                    if (userDetails != null) {
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
                 }
             }
         }
-        // 继续执行下一个过滤器
         filterChain.doFilter(request, response);
     }
-
 }

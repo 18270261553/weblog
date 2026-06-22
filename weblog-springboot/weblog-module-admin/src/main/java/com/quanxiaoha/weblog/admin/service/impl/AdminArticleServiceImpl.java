@@ -7,6 +7,8 @@ import com.quanxiaoha.weblog.common.domain.dos.*;
 import com.quanxiaoha.weblog.admin.model.vo.article.*;
 import com.quanxiaoha.weblog.admin.service.AdminArticleService;
 import com.quanxiaoha.weblog.common.Response;
+import com.quanxiaoha.weblog.common.constant.RedisKeyConstants;
+import com.quanxiaoha.weblog.common.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,12 +37,24 @@ public class AdminArticleServiceImpl implements AdminArticleService {
     @Autowired
     private AdminArticleTagRelDao articleTagRelDao;
 
+    // ========== 新增 Redis 相关 ==========
+    @Autowired
+    private RedisService redisService;
+
+    private static final String ARTICLE_DETAIL_PREFIX = "weblog:article:detail:";
+    private static final String ARTICLE_PAGE_LIST_PREFIX = "weblog:article:page:";
+    private static final long ARTICLE_CACHE_TTL = 30; // 30分钟
+
     private final TransactionTemplate transactionTemplate;
 
     @Autowired
     public AdminArticleServiceImpl(PlatformTransactionManager transactionManager) {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
+
+    // ============================================================
+    // 写操作：发布/更新/删除 → 清除缓存
+    // ============================================================
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -71,15 +86,37 @@ public class AdminArticleServiceImpl implements AdminArticleService {
             return true;
         });
 
+        if (isExecuteSuccess) {
+            // ========== 清除文章列表缓存 ==========
+            evictArticleListCaches();
+            log.info("发布文章成功，已清除文章列表缓存");
+        }
+
         return isExecuteSuccess ? Response.success() : Response.fail();
     }
 
-    // ===================== 【修复点：判空！！！】 =====================
+    // ============================================================
+    // 读操作：从缓存读取
+    // ============================================================
+
     @Override
     public Response queryArticleDetail(QueryArticleDetailReqVO queryArticleDetailReqVO) {
         Long articleId = queryArticleDetailReqVO.getArticleId();
-        ArticleDO articleDO = articleDao.queryByArticleId(articleId);
+        String cacheKey = ARTICLE_DETAIL_PREFIX + articleId;
 
+        // 1. 先从缓存取
+        try {
+            Object cached = redisService.get(cacheKey);
+            if (cached != null) {
+                log.info("从缓存获取文章详情，articleId: {}", articleId);
+                return Response.success(cached);
+            }
+        } catch (Exception e) {
+            log.warn("Redis 读取文章详情失败，降级查数据库，articleId: {}", articleId, e);
+        }
+
+        // 2. 缓存未命中，查数据库
+        ArticleDO articleDO = articleDao.queryByArticleId(articleId);
         if (articleDO == null) {
             return Response.fail("文章不存在");
         }
@@ -102,11 +139,19 @@ public class AdminArticleServiceImpl implements AdminArticleService {
                 .id(articleDO.getId())
                 .title(articleDO.getTitle())
                 .titleImage(articleDO.getTitleImage())
-                .content(content) // 安全
-                .categoryId(categoryId) // 安全
+                .content(content)
+                .categoryId(categoryId)
                 .tagIds(tagIds)
                 .description(articleDO.getDescription())
                 .build();
+
+        // 3. 写入缓存（30分钟过期）
+        try {
+            redisService.set(cacheKey, rsp, ARTICLE_CACHE_TTL, TimeUnit.MINUTES);
+            log.info("文章详情已缓存，articleId: {}", articleId);
+        } catch (Exception e) {
+            log.warn("Redis 写入文章详情缓存失败，articleId: {}", articleId, e);
+        }
 
         return Response.success(rsp);
     }
@@ -119,7 +164,34 @@ public class AdminArticleServiceImpl implements AdminArticleService {
         Date endDate = queryArticlePageListReqVO.getEndDate();
         String searchTitle = queryArticlePageListReqVO.getSearchTitle();
 
+        // 生成缓存 Key（包含所有查询参数）
+        String cacheKey = ARTICLE_PAGE_LIST_PREFIX + current + ":" + size + ":"
+                + (startDate != null ? startDate.getTime() : "null") + ":"
+                + (endDate != null ? endDate.getTime() : "null") + ":"
+                + (searchTitle != null ? searchTitle : "null");
+
+        // 1. 先从缓存取
+        try {
+            Object cached = redisService.get(cacheKey);
+            if (cached != null) {
+                log.info("从缓存获取文章列表，current: {}, size: {}", current, size);
+                return Response.success(cached);
+            }
+        } catch (Exception e) {
+            log.warn("Redis 读取文章列表失败，降级查数据库", e);
+        }
+
+        // 2. 缓存未命中，查数据库
         Page<ArticleDO> articleDOPage = articleDao.queryArticlePageList(current, size, startDate, endDate, searchTitle);
+
+        // 3. 写入缓存（30分钟过期）
+        try {
+            redisService.set(cacheKey, articleDOPage, ARTICLE_CACHE_TTL, TimeUnit.MINUTES);
+            log.info("文章列表已缓存，current: {}, size: {}", current, size);
+        } catch (Exception e) {
+            log.warn("Redis 写入文章列表缓存失败", e);
+        }
+
         return Response.success(articleDOPage);
     }
 
@@ -131,6 +203,11 @@ public class AdminArticleServiceImpl implements AdminArticleService {
         articleContentDao.deleteByArticleId(articleId);
         articleCategoryRelDao.deleteByArticleId(articleId);
         articleTagRelDao.deleteByArticleId(articleId);
+
+        // ========== 清除缓存 ==========
+        evictArticleCaches(articleId);
+
+        log.info("删除文章成功，articleId: {}", articleId);
         return Response.success();
     }
 
@@ -166,6 +243,12 @@ public class AdminArticleServiceImpl implements AdminArticleService {
             handleTagBiz(articleId, publishTags);
             return true;
         });
+
+        if (isExecuteSuccess) {
+            // ========== 清除缓存 ==========
+            evictArticleCaches(updateArticleReqVO.getId());
+            log.info("更新文章成功，已清除缓存，articleId: {}", updateArticleReqVO.getId());
+        }
 
         return isExecuteSuccess ? Response.success() : Response.fail();
     }
@@ -212,6 +295,37 @@ public class AdminArticleServiceImpl implements AdminArticleService {
                 articleTagRelDOS.add(articleTagRelDO);
             });
             articleTagRelDao.insertBatch(articleTagRelDOS);
+        }
+    }
+
+    // ============================================================
+    // 私有方法：统一清除缓存
+    // ============================================================
+
+    /**
+     * 清除单个文章的缓存
+     */
+    private void evictArticleCaches(Long articleId) {
+        try {
+            // 清除文章详情缓存
+            redisService.delete(ARTICLE_DETAIL_PREFIX + articleId);
+            // 清除文章列表缓存（所有分页）
+            evictArticleListCaches();
+            log.info("清除文章缓存成功，articleId: {}", articleId);
+        } catch (Exception e) {
+            log.warn("清除文章缓存失败，articleId: {}", articleId, e);
+        }
+    }
+
+    /**
+     * 清除所有文章列表缓存（按前缀批量删除）
+     */
+    private void evictArticleListCaches() {
+        try {
+            redisService.deleteByPrefix(ARTICLE_PAGE_LIST_PREFIX);
+            log.info("清除所有文章列表缓存成功");
+        } catch (Exception e) {
+            log.warn("清除文章列表缓存失败", e);
         }
     }
 }

@@ -6,27 +6,15 @@ import com.quanxiaoha.weblog.common.domain.dos.UserDO;
 import com.quanxiaoha.weblog.common.domain.dos.UserRoleDO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.User.UserBuilder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
- * @date: 2023-04-17 12:08
- * @description: TODO
- **/
 @Service
 @Slf4j
 public class UserDetailServiceImpl implements UserDetailsService {
@@ -38,26 +26,23 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) {
+        // 1. 查询用户
         UserDO userDO = userDao.selectByUsername(username);
-
         if (userDO == null) {
             throw new UsernameNotFoundException("该用户不存在");
         }
 
-        // 用户角色
+        // 2. 查询用户角色
         List<UserRoleDO> roleDOS = userRoleDao.selectByUsername(username);
-
-        String[] roleArr = null;
-
         if (!CollectionUtils.isEmpty(roleDOS)) {
-            List<String> roles = roleDOS.stream().map(p -> p.getRole()).collect(Collectors.toList());
-            roleArr = roles.toArray(new String[roles.size()]);
+            List<String> roles = roleDOS.stream()
+                    .map(UserRoleDO::getRole)
+                    .collect(Collectors.toList());
+            userDO.setRoles(roles);  // ← 关键：设置角色列表
         }
 
-        return User.withUsername(userDO.getUsername())
-                .password(userDO.getPassword())
-                .authorities(roleArr)
-                .build();
-    }
+        log.info("用户登录成功，username: {}, roles: {}", userDO.getUsername(), userDO.getRoles());
 
+        return userDO;
+    }
 }

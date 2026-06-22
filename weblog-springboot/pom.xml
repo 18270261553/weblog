@@ -13,7 +13,7 @@
     <artifactId>weblog-springboot</artifactId>
     <version>${revision}</version>
     <name>weblog-springboot</name>
-    <description>前后端分离博客 Weblog By 犬小哈</description>
+    <description>前后端分离博客 Weblog By dgq</description>
 
     <!-- 版本号统一管理 -->
     <properties>
@@ -53,6 +53,18 @@
     <!-- 统一版本管理 -->
     <dependencyManagement>
         <dependencies>
+            <!-- Redis整合 starter lettuce客户端 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>2.6.3</version>
+            </dependency>
+            <!-- lettuce连接池 commons-pool2 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>2.11.1</version>
+            </dependency>
             <dependency>
                 <groupId>com.quanxiaoha</groupId>
                 <artifactId>weblog-module-common</artifactId>

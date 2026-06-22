@@ -22,7 +22,9 @@ spring:
       quiet-period: 200ms     # 编译后 0.2 秒就重启
     livereload:
       enabled: true
-      
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 # 解决多模块项目 DevTools 类加载问题
 spring.devtools.restart.additional-exclude: WEB-INF/**
       

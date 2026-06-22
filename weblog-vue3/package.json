@@ -47,6 +47,7 @@
     "unplugin-vue-components": "^0.25.1",
     "vfonts": "^0.0.3",
     "vite": "^4.1.4",
+    "vite-plugin-compression": "^0.5.1",
     "vite-plugin-windicss": "^1.8.10",
     "windicss": "^3.5.6"
   }

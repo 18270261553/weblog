@@ -1,6 +1,6 @@
 <template>
     <footer class="footer">
-        Copyright © 2023. All rights reserved. Provided by&nbsp;<a class="quanxiaoha" href="https://www.quanxiaoha.com" target="_blank">犬小哈</a>
+        Copyright © 2023. All rights reserved. Provided by&nbsp;<a class="quanxiaoha" href="https://www.quanxiaoha.com" target="_blank">dgq</a>
     </footer>
 </template>
 

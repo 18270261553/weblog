@@ -5,8 +5,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
+ * @author: dgq   
  * @date: 2023-07-12 9:08
  * @description: 跨域访问配置
  **/

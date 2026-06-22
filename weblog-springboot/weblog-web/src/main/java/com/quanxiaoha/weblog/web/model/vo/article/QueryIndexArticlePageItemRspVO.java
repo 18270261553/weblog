@@ -14,6 +14,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+
 public class QueryIndexArticlePageItemRspVO {
     private Long id;
     private String titleImage;

@@ -20,12 +20,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
+ * @author: dgq
  * @date: 2023-04-17 12:08
  * @description: TODO
  **/
@@ -37,6 +37,9 @@ public class ArchiveServiceImpl extends ServiceImpl<ArticleMapper, ArticleDO> im
     private ArticleDao articleDao;
     @Autowired
     private ArticleConvert articleConvert;
+
+    // 定义中文日期格式
+    private static final DateTimeFormatter CHINESE_FORMATTER = DateTimeFormatter.ofPattern("yyyy年MM月");
 
     @Override
     public Response queryArchive(QueryArchivePageListReqVO queryArchivePageListReqVO) {
@@ -54,6 +57,7 @@ public class ArchiveServiceImpl extends ServiceImpl<ArticleMapper, ArticleDO> im
                     .collect(Collectors.toList());
 
             Map<String, List<QueryArchiveItemRspVO>> map = itemRspVOList.stream().collect(Collectors.groupingBy(QueryArchiveItemRspVO::getCreateMonth));
+            // ✅ 使用 TreeMap 并传入自定义比较器
             Map<String, List<QueryArchiveItemRspVO>> sortedMap = new TreeMap<>(new MonthKeyComparator());
             sortedMap.putAll(map);
 
@@ -62,13 +66,22 @@ public class ArchiveServiceImpl extends ServiceImpl<ArticleMapper, ArticleDO> im
         return PageResponse.success(articleDOIPage, list);
     }
 
+    /**
+     * 自定义比较器：按中文日期格式倒序排序
+     */
     class MonthKeyComparator implements Comparator<String> {
         @Override
         public int compare(String o1, String o2) {
-            // 使用 YearMonth 类将字符串解析成日期，并根据日期进行倒序排序
-            YearMonth ym1 = YearMonth.parse(o1);
-            YearMonth ym2 = YearMonth.parse(o2);
-            return ym2.compareTo(ym1);
+            try {
+                // ✅ 使用自定义格式解析 "2026年04月"
+                YearMonth ym1 = YearMonth.parse(o1, CHINESE_FORMATTER);
+                YearMonth ym2 = YearMonth.parse(o2, CHINESE_FORMATTER);
+                // 倒序排列（最新的在前面）
+                return ym2.compareTo(ym1);
+            } catch (Exception e) {
+                // 如果解析失败，按字符串自然顺序
+                return o2.compareTo(o1);
+            }
         }
     }
 }

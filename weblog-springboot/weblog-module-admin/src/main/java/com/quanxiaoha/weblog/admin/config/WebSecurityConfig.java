@@ -16,7 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * @author: 犬小哈
+ * @author: dgq
  * @from: 公众号：小哈学Java, 网站：www.quanxiaoha.com
  * @date: 2023-04-15 14:18
  * @version: v1.0.0

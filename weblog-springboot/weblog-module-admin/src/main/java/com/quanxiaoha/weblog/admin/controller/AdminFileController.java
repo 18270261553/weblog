@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
+ * @author: dgq   
  * @date: 2023-04-19 16:06
  * @description: TODO
  **/

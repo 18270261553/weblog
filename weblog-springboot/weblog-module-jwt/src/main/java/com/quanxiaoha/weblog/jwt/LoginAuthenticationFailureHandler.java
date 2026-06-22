@@ -2,7 +2,7 @@ package com.quanxiaoha.weblog.jwt;
 
 import com.quanxiaoha.weblog.common.Response;
 import com.quanxiaoha.weblog.common.enums.ResponseCodeEnum;
-import com.quanxiaoha.weblog.jwt.utils.ResultUtil;
+import com.quanxiaoha.weblog.utils.ResultUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -16,8 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
+ * @author: dgq   
  * @date: 2023-04-18 16:30
  * @description: 登录认证失败后处理
  **/

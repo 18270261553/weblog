@@ -1,6 +1,5 @@
 package com.quanxiaoha.weblog.web.convert;
 
-import com.quanxiaoha.weblog.common.constant.Constants;
 import com.quanxiaoha.weblog.common.domain.dos.ArticleDO;
 import com.quanxiaoha.weblog.web.model.vo.archive.QueryArchiveItemRspVO;
 import com.quanxiaoha.weblog.web.model.vo.article.QueryIndexArticlePageItemRspVO;
@@ -8,15 +7,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
 
-/**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
- * @date: 2023-07-30 8:55
- * @description: TODO
- **/
 @Mapper(componentModel = "spring")
 public interface ArticleConvert {
     ArticleConvert INSTANCE = Mappers.getMapper(ArticleConvert.class);
@@ -29,15 +23,12 @@ public interface ArticleConvert {
     QueryArchiveItemRspVO convert2Archive(ArticleDO bean);
 
     default String formatDate(Date date) {
-        if (Objects.isNull(date))
-            return null;
-        return Constants.DATE_FORMAT.format(date);
+        if (Objects.isNull(date)) return null;
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
     }
 
     default String formatMonth(Date date) {
-        if (Objects.isNull(date))
-            return null;
-        return Constants.MONTH_FORMAT.format(date);
+        if (Objects.isNull(date)) return null;
+        return new SimpleDateFormat("yyyy年MM月").format(date);
     }
-
 }

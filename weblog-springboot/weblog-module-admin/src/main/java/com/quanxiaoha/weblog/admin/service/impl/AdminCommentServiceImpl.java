@@ -6,20 +6,25 @@ import com.quanxiaoha.weblog.admin.model.vo.comment.CommentListRespVO;
 import com.quanxiaoha.weblog.admin.model.vo.comment.PublishCommentReqVO;
 import com.quanxiaoha.weblog.admin.model.vo.comment.QueryCommentListReqVO;
 import com.quanxiaoha.weblog.admin.service.AdminCommentService;
+import com.quanxiaoha.weblog.common.Response;
+import com.quanxiaoha.weblog.common.constant.RedisKeyConstants;
 import com.quanxiaoha.weblog.common.domain.dos.CommentDO;
 import com.quanxiaoha.weblog.common.domain.dos.CommentLikeDO;
 import com.quanxiaoha.weblog.common.domain.dos.UserDO;
 import com.quanxiaoha.weblog.common.domain.mapper.CommentLikeMapper;
 import com.quanxiaoha.weblog.common.domain.mapper.CommentMapper;
 import com.quanxiaoha.weblog.common.domain.mapper.UserMapper;
-import com.quanxiaoha.weblog.common.Response;
-import com.quanxiaoha.weblog.jwt.utils.SecurityUtil;
+import com.quanxiaoha.weblog.common.service.RedisService;
+import com.quanxiaoha.weblog.utils.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -34,9 +39,19 @@ public class AdminCommentServiceImpl implements AdminCommentService {
     @Autowired
     private UserMapper userMapper;
 
+    // ========== 新增 Redis 相关 ==========
+    @Autowired
+    private RedisService redisService;
+
+    private static final String COMMENT_PAGE_LIST_PREFIX = "weblog:comment:page:";
+    private static final long COMMENT_CACHE_TTL = 30; // 30分钟
+
+    // ============================================================
+    // 写操作：发表评论 → 清除缓存
+    // ============================================================
+
     @Override
     public Response publishComment(PublishCommentReqVO vo) {
-        // 你的原有代码，不动
         CommentDO commentDO = CommentDO.builder()
                 .articleId(vo.getArticleId())
                 .userId(vo.getUserId())
@@ -48,26 +63,53 @@ public class AdminCommentServiceImpl implements AdminCommentService {
                 .build();
 
         commentMapper.insert(commentDO);
+
+        // ========== 清除评论列表缓存 ==========
+        evictCommentListCaches();
+        log.info("发表评论成功，已清除评论列表缓存，articleId: {}", vo.getArticleId());
+
         return Response.success("发表评论成功");
     }
 
+    // ============================================================
+    // 读操作：从缓存读取
+    // ============================================================
+
     @Override
     public Response queryCommentList(QueryCommentListReqVO vo) {
-        // 1. 查询评论分页
+        Long current = vo.getCurrent();
+        Long size = vo.getSize();
+        Long articleId = vo.getArticleId();
+
+        // 生成缓存 Key（包含所有查询参数）
+        String cacheKey = COMMENT_PAGE_LIST_PREFIX + current + ":" + size + ":"
+                + (articleId != null ? articleId : "null");
+
+        // 1. 先从缓存取
+        try {
+            Object cached = redisService.get(cacheKey);
+            if (cached != null) {
+                log.info("从缓存获取评论列表，current: {}, size: {}, articleId: {}", current, size, articleId);
+                return Response.success(cached);
+            }
+        } catch (Exception e) {
+            log.warn("Redis 读取评论列表失败，降级查数据库", e);
+        }
+
+        // 2. 缓存未命中，查数据库
         LambdaQueryWrapper<CommentDO> wrapper = new LambdaQueryWrapper<>();
-        if (vo.getArticleId() != null) {
-            wrapper.eq(CommentDO::getArticleId, vo.getArticleId());
+        if (articleId != null) {
+            wrapper.eq(CommentDO::getArticleId, articleId);
         }
         wrapper.orderByDesc(CommentDO::getCreateTime);
 
-        Page<CommentDO> page = new Page<>(vo.getCurrent(), vo.getSize());
+        Page<CommentDO> page = new Page<>(current, size);
         Page<CommentDO> commentPage = commentMapper.selectPage(page, wrapper);
 
-        // 2. 获取当前登录用户 ID
-        Long currentUserId = getCurrentLoginUserId();
-
         // 3. 组装 VO + 点赞信息
+        Long currentUserId = getCurrentLoginUserId();
         List<CommentListRespVO> respList = new ArrayList<>();
+
         for (CommentDO comment : commentPage.getRecords()) {
             CommentListRespVO respVO = new CommentListRespVO();
             BeanUtils.copyProperties(comment, respVO);
@@ -86,16 +128,27 @@ public class AdminCommentServiceImpl implements AdminCommentService {
 
             respVO.setLikeNum((int) likeNum);
             respVO.setIsCommentLiked(isLiked);
-
             respList.add(respVO);
         }
 
-        // 4. 封装分页结果返回
+        // 封装分页结果
         Page<CommentListRespVO> resultPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         resultPage.setRecords(respList);
 
+        // 4. 写入缓存（30分钟过期）
+        try {
+            redisService.set(cacheKey, resultPage, COMMENT_CACHE_TTL, TimeUnit.MINUTES);
+            log.info("评论列表已缓存，current: {}, size: {}, articleId: {}", current, size, articleId);
+        } catch (Exception e) {
+            log.warn("Redis 写入评论列表缓存失败", e);
+        }
+
         return Response.success(resultPage);
     }
+
+    // ============================================================
+    // 私有方法
+    // ============================================================
 
     /**
      * 获取当前登录用户 ID
@@ -108,6 +161,18 @@ public class AdminCommentServiceImpl implements AdminCommentService {
             return user == null ? null : user.getId();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    /**
+     * 清除所有评论列表缓存
+     */
+    private void evictCommentListCaches() {
+        try {
+            redisService.deleteByPrefix(COMMENT_PAGE_LIST_PREFIX);
+            log.debug("清除所有评论列表缓存成功");
+        } catch (Exception e) {
+            log.warn("清除评论列表缓存失败", e);
         }
     }
 }

@@ -1,6 +1,21 @@
 <script setup>
 import { onMounted, ref, nextTick } from 'vue'
-import * as echarts from 'echarts'
+// ✅ 按需引入 ECharts 核心和需要的组件
+import * as echarts from 'echarts/core'
+import { BarChart, LineChart } from 'echarts/charts'
+import { TitleComponent, TooltipComponent, GridComponent, LegendComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+// 注册需要的组件
+echarts.use([
+  BarChart,
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  CanvasRenderer
+])
 
 // 顶部核心指标数据
 const topMetrics = ref({

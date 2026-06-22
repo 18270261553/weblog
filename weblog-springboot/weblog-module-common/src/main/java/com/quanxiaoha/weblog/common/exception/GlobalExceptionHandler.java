@@ -18,8 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 /**
- * @author: 犬小哈
- * @url: www.quanxiaoha.com
+ * @author: dgq   
  * @date: 2023-04-18 8:24
  * @description: 全局异常捕获
  **/

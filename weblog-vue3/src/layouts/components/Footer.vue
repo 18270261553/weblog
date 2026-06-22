@@ -10,7 +10,7 @@
                 Provided by&nbsp;
                 <li>
                     <a href="https://www.quanxiaoha.com" target="_blank" class="mr-4 hover:underline md:mr-6">
-                        犬小哈</a>
+                        dgq</a>
                 </li>
             </ul>
         </div>
