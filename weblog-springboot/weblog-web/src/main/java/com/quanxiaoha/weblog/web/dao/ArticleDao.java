@@ -17,4 +17,9 @@ public interface ArticleDao {
     ArticleDO selectNextArticle(Long articleId);
 
     IPage<ArticleDO> queryArticlePageListByArticleIds(Long current, Long size, List<Long> articleIds);
+    /**
+     * 根据关键词列表搜索文章
+     * 用于 RAG 检索
+     */
+    List<ArticleDO> searchByKeywords(List<String> keywords);
 }

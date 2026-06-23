@@ -38,11 +38,13 @@ public class UserDetailServiceImpl implements UserDetailsService {
             List<String> roles = roleDOS.stream()
                     .map(UserRoleDO::getRole)
                     .collect(Collectors.toList());
-            userDO.setRoles(roles);  // ← 关键：设置角色列表
+            userDO.setRoles(roles);
+            log.info("用户 {} 的角色: {}", username, roles);  // ← 加这行日志
+        } else {
+            log.warn("用户 {} 没有分配任何角色！", username);  // ← 加这行日志
         }
 
         log.info("用户登录成功，username: {}, roles: {}", userDO.getUsername(), userDO.getRoles());
-
         return userDO;
     }
 }

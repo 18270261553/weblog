@@ -25,6 +25,14 @@ spring:
         maxidle: 8
         min-idle: 0
         max-wait: -1
+# AI 配置
+ai:
+  enabled: true
+  rag:
+    enabled: true      # ← 开启 RAG
+  timeout: 60000
+  max-tokens: 1024
+  temperature: 0.7
 
 
   

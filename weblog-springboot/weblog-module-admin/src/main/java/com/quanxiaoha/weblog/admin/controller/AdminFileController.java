@@ -24,8 +24,8 @@ public class AdminFileController {
     @Autowired
     private AdminFileService fileService;
 
+//    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/file/upload")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Response uploadFile(@RequestParam MultipartFile file) {
         return fileService.uploadFile(file);
     }

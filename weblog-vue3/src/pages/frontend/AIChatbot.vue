@@ -110,6 +110,30 @@
 
                   <div class="text-sm leading-relaxed" v-html="formatMessage(msg.content)"></div>
 
+                  <!-- ========== 引用来源 ========== -->
+                  <div v-if="msg.role === 'assistant' && msg.references && msg.references.length > 0"
+                       class="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mb-1">📚 参考来源：</p>
+                    <div v-for="ref in msg.references" :key="ref.id || ref.title" class="text-xs">
+                      <!-- ✅ 有 ID 且大于 0 才显示超链接 -->
+                      <a v-if="ref.id && ref.id > 0"
+                         :href="'/#/article/detail?articleId=' + ref.id"
+                         target="_blank"
+                         class="text-blue-500 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300">
+                        {{ ref.title }}
+                      </a>
+                      <!-- ❌ 没有 ID 只显示文本 -->
+                      <span v-else class="text-gray-500 dark:text-gray-400">
+                        {{ ref.title }}
+                      </span>
+                    </div>
+                    <!-- 小提示 -->
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      <span v-if="msg.references.some(r => r.id > 0)">🔗 蓝色标题可点击跳转</span>
+                      <span v-if="msg.references.some(r => !r.id || r.id === 0)" class="ml-2">📄 灰色标题为通用推荐</span>
+                    </p>
+                  </div>
+
                   <!-- 操作按钮（仅AI消息） -->
                   <div v-if="msg.role === 'assistant' && !msg.isError" class="flex items-center space-x-3 mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
                     <button @click="copyMessage(msg.content)" class="text-xs opacity-70 hover:opacity-100 flex items-center">
@@ -311,6 +335,47 @@ const updateConversationTitle = () => {
     }
   }
 }
+// ========== 提取引用文章信息 ==========
+const extractReferences = (content) => {
+  console.log('🔍 原始内容:', content)
+  const references = []
+
+  // ✅ 匹配 "标题 (ID: 数字)" 格式
+  const pattern = /《?([^》]+)》?\s*\(ID[：:]\s*(\d+)\)/g
+  let match
+  while ((match = pattern.exec(content)) !== null) {
+    const title = match[1].trim()
+    const id = parseInt(match[2])
+    console.log('✅ 匹配到:', title, 'ID:', id)
+    if (title && id && !references.find(r => r.id === id)) {
+      references.push({ id, title })
+    }
+  }
+
+  // 如果没有匹配到 (ID: 数字) 格式，再尝试只匹配标题
+  if (references.length === 0) {
+    const fallbackPattern = /《([^》]+)》/g
+    let fallbackMatch
+    while ((fallbackMatch = fallbackPattern.exec(content)) !== null) {
+      const title = fallbackMatch[1].trim()
+      if (title && !references.find(r => r.title === title)) {
+        references.push({ id: 0, title })
+      }
+    }
+  }
+
+  console.log('📚 提取结果:', references)
+  return references
+}
+
+// ========== 在AI回复中注入引用信息 ==========
+const processAIResponse = (content) => {
+  const references = extractReferences(content)
+  return {
+    content: content,
+    references: references
+  }
+}
 
 // 发送消息
 const sendMessage = async () => {
@@ -328,7 +393,6 @@ const sendMessage = async () => {
   scrollToBottom()
   autoResizeTextarea()
 
-  // 更新对话的最后消息
   const conv = conversations.value[currentConversation.value]
   if (conv) {
     conv.lastMessage = question
@@ -340,7 +404,6 @@ const sendMessage = async () => {
   isTyping.value = true
 
   try {
-    // 准备历史消息
     const history = currentMessages.value.slice(-10).map(m => ({
       role: m.role,
       content: m.content.replace(/<[^>]*>/g, '')
@@ -352,14 +415,16 @@ const sendMessage = async () => {
     })
 
     if (response.success) {
+      console.log('AI 回复内容:', response.data)
+      const processed = processAIResponse(response.data)
       const aiMessage = {
         role: 'assistant',
-        content: response.data,
+        content: processed.content,
+        references: processed.references,
         timestamp: new Date()
       }
       currentMessages.value.push(aiMessage)
 
-      // 更新对话
       conv.messages = currentMessages.value
       saveConversations()
       updateConversationTitle()
@@ -384,14 +449,11 @@ const sendMessage = async () => {
 const regenerateMessage = async (msgIdx) => {
   if (isTyping.value) return
 
-  // 找到最后一条用户消息
   const lastUserMsg = [...currentMessages.value].reverse().find(m => m.role === 'user')
   if (!lastUserMsg) return
 
-  // 移除最后一条AI回复
   currentMessages.value.splice(msgIdx, 1)
 
-  // 重新发送
   isTyping.value = true
 
   try {
@@ -406,9 +468,11 @@ const regenerateMessage = async (msgIdx) => {
     })
 
     if (response.success) {
+      const processed = processAIResponse(response.data)
       const aiMessage = {
         role: 'assistant',
-        content: response.data,
+        content: processed.content,
+        references: processed.references,
         timestamp: new Date()
       }
       currentMessages.value.push(aiMessage)
@@ -496,17 +560,14 @@ const scrollToBottom = async () => {
   }
 }
 
-// 监听输入框变化自动调整高度
 watch(inputMessage, () => {
   autoResizeTextarea()
 })
 
-// 监听消息变化
 watch(currentMessages, () => {
   scrollToBottom()
 }, {deep: true})
 
-// 初始化
 onMounted(() => {
   loadConversations()
   if (conversations.value.length === 0) {
@@ -560,5 +621,16 @@ onMounted(() => {
 pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* 引用链接样式 */
+.reference-link {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.reference-link:hover {
+  text-decoration: underline;
+  color: #1d4ed8;
 }
 </style>

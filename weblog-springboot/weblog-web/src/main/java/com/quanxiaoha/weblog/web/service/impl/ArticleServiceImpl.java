@@ -10,6 +10,7 @@ import com.quanxiaoha.weblog.common.domain.dos.*;
 import com.quanxiaoha.weblog.common.enums.EventEnum;
 import com.quanxiaoha.weblog.common.eventbus.ArticleEvent;
 import com.quanxiaoha.weblog.common.exception.ResourceNotFoundException;
+import com.quanxiaoha.weblog.common.service.RedisService;
 import com.quanxiaoha.weblog.web.convert.ArticleConvert;
 import com.quanxiaoha.weblog.web.dao.*;
 import com.quanxiaoha.weblog.web.model.vo.article.*;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +52,10 @@ public class ArticleServiceImpl implements ArticleService {
     private EventBus eventBus;
     @Autowired
     private ArticleConvert articleConvert;
+    @Autowired
+    private RedisService redisService;
+    private static final String FRONT_ARTICLE_DETAIL_PREFIX = "weblog:front:article:detail:";
+    private static final long FRONT_ARTICLE_CACHE_TTL = 30; // 30分钟
 
     @Override
     public PageResponse queryIndexArticlePageList(QueryIndexArticlePageListReqVO queryIndexArticlePageListReqVO) {
@@ -196,10 +202,21 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public Response queryArticleDetail(QueryArticleDetailReqVO queryArticleDetailReqVO) {
         Long articleId = queryArticleDetailReqVO.getArticleId();
+        String cacheKey = FRONT_ARTICLE_DETAIL_PREFIX + articleId;
 
-        // 判断文章是否存在
+        // 1. 先从缓存取
+        try {
+            Object cached = redisService.get(cacheKey);
+            if (cached != null) {
+                log.info("前台文章详情命中缓存，articleId: {}", articleId);
+                return Response.success(cached);
+            }
+        } catch (Exception e) {
+            log.warn("Redis 读取失败，降级查数据库，articleId: {}", articleId, e);
+        }
+
+        // 2. 缓存未命中，查数据库
         ArticleDO articleDO = articleDao.selectArticleById(articleId);
-
         if (Objects.isNull(articleDO)) {
             throw new ResourceNotFoundException();
         }
@@ -221,40 +238,45 @@ public class ArticleServiceImpl implements ArticleService {
 
         // 查询文章标签
         List<ArticleTagRelDO> articleTagRelDOS = articleTagRelDao.selectByArticleId(articleId);
-        List<Long> tagIds = articleTagRelDOS.stream().map(p -> p.getTagId()).collect(Collectors.toList());
+        List<Long> tagIds = articleTagRelDOS.stream().map(ArticleTagRelDO::getTagId).collect(Collectors.toList());
         List<TagDO> tagDOS = tagDao.selectByTagIds(tagIds);
-
         List<QueryTagListItemRspVO> queryTagListItemRspVOS = tagDOS.stream()
-                .map(p -> QueryTagListItemRspVO.builder().id(p.getId()).name(p.getName()).build()).collect(Collectors.toList());
+                .map(p -> QueryTagListItemRspVO.builder().id(p.getId()).name(p.getName()).build())
+                .collect(Collectors.toList());
         vo.setTags(queryTagListItemRspVOS);
 
         // 上一篇
         ArticleDO preArticle = articleDao.selectPreArticle(articleId);
         if (Objects.nonNull(preArticle)) {
-            QueryArticleLinkRspVO prevArticleVO = QueryArticleLinkRspVO.builder()
+            vo.setPreArticle(QueryArticleLinkRspVO.builder()
                     .title(preArticle.getTitle())
                     .id(preArticle.getId())
-                    .build();
-            vo.setPreArticle(prevArticleVO);
+                    .build());
         }
 
         // 下一篇
         ArticleDO nextArticle = articleDao.selectNextArticle(articleId);
         if (Objects.nonNull(nextArticle)) {
-            QueryArticleLinkRspVO nextArticleVO = QueryArticleLinkRspVO.builder()
+            vo.setNextArticle(QueryArticleLinkRspVO.builder()
                     .title(nextArticle.getTitle())
                     .id(nextArticle.getId())
-                    .build();
-            vo.setNextArticle(nextArticleVO);
+                    .build());
         }
 
-        // 发送消息事件
+        // 3. 写入缓存
+        try {
+            redisService.set(cacheKey, vo, FRONT_ARTICLE_CACHE_TTL, TimeUnit.MINUTES);
+            log.info("前台文章详情已缓存，articleId: {}", articleId);
+        } catch (Exception e) {
+            log.warn("Redis 写入失败，articleId: {}", articleId, e);
+        }
+
+        // 发送消息事件（PV 计数）
         log.info("发送 PV +1 消息事件");
         eventBus.post(ArticleEvent.builder().articleId(articleId).message(EventEnum.PV_INCREASE.getMessage()).build());
 
         return Response.success(vo);
     }
-
     @Override
     public PageResponse queryTagArticlePageList(QueryTagArticlePageListReqVO queryTagArticlePageListReqVO) {
         Long current = queryTagArticlePageListReqVO.getCurrent();

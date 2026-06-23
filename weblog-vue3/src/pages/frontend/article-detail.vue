@@ -237,8 +237,8 @@ import { marked } from 'marked'
 
 const router = useRouter()
 const route = useRoute()
-const articleId = Number(route.query.articleId)
-
+// const articleId = Number(route.query.articleId)
+const articleId = Number(route.query.id || route.query.articleId)
 const isLiked = ref(false);
 const likeCount = ref(0);
 

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,6 +18,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collection;
 
 @Slf4j
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
@@ -28,7 +30,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private UserDetailsService userDetailsService;
 
     @Autowired
-    private UserCacheService userCacheService;  // ← 新增
+    private UserCacheService userCacheService;
 
     @Value("${jwt.tokenPrefix}")
     private String tokenPrefix;
@@ -67,11 +69,20 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
                     // ========== 3. 设置到 SecurityContextHolder ==========
                     if (userDetails != null) {
+                        Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
+                        // 打印权限，方便调试
+                        log.info("✅ 用户 {} 的权限: {}", username, authorities);
+
+                        // 检查权限是否包含 ROLE_ADMIN
+                        boolean hasAdminRole = authorities.stream()
+                                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                        log.info("✅ 用户 {} 是否拥有 ROLE_ADMIN: {}", username, hasAdminRole);
+
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(
                                         userDetails,
                                         null,
-                                        userDetails.getAuthorities()
+                                        authorities
                                 );
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authentication);

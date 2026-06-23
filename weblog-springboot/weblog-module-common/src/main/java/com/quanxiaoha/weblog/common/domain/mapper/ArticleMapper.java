@@ -16,4 +16,9 @@ public interface ArticleMapper extends BaseMapper<ArticleDO> {
             "GROUP BY DATE(create_time)\n" +
             "ORDER BY DATE(create_time)")
     List<ArticleCountDO> selectArticleCount(@Param("startDate") String startDate, @Param("endDate") String endDate);
+    /**
+     * 按关键词列表搜索文章（RAG 检索）
+     * 由于 MyBatis-Plus 注解不支持动态 foreach，使用 XML 方式
+     */
+    List<ArticleDO> searchByKeywords(@Param("keywords") List<String> keywords);
 }

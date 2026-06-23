@@ -26,7 +26,7 @@ public class AdminArticleController {
 
     @PostMapping("/publish")
     @ApiOperationLog(description = "发布文章")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+//    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Response publishArticle(@RequestBody @Validated PublishArticleReqVO publishArticleReqVO) {
         return articleService.publishArticle(publishArticleReqVO);
     }

@@ -2,9 +2,12 @@ package com.quanxiaoha.weblog.web.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quanxiaoha.weblog.common.Response;
+import com.quanxiaoha.weblog.web.model.vo.ai.ArticleReference;
 import com.quanxiaoha.weblog.web.service.AIService;
+import com.quanxiaoha.weblog.web.service.RAGService;
 import com.quanxiaoha.weblog.web.service.StreamCallback;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -49,6 +52,12 @@ public class AIServiceImpl implements AIService {
     @Value("${ai.enabled:true}")
     private boolean aiEnabled;
 
+    @Value("${ai.rag.enabled:true}")
+    private boolean ragEnabled;
+
+    @Autowired
+    private RAGService ragService;
+
     private final RestTemplate restTemplate;
     private final ExecutorService executorService;
     private final ObjectMapper objectMapper;
@@ -60,6 +69,7 @@ public class AIServiceImpl implements AIService {
     }
 
     private static final String SYSTEM_PROMPT = "你是博客AI智能助手，回答简洁、准确、使用中文。";
+    private static final String RAG_SYSTEM_PROMPT = "你是博客AI智能助手，基于提供的博客文章内容回答用户问题。回答要准确、简洁，并注明引用来源。";
 
     @Override
     public String chat(String message, List<Map<String, String>> history) {
@@ -68,7 +78,35 @@ public class AIServiceImpl implements AIService {
         if (message == null || message.trim().isEmpty()) return "请输入有效的问题";
 
         try {
-            List<Map<String, String>> messages = buildMessages(message, history);
+            List<Map<String, String>> messages = new ArrayList<>();
+
+            // 1. 判断是否启用 RAG
+            String ragContext = null;
+            if (ragEnabled) {
+                ragContext = ragService.buildRAGContext(message);
+            }
+
+            // 2. 构建系统提示
+            String systemPrompt = (ragContext != null) ? RAG_SYSTEM_PROMPT : SYSTEM_PROMPT;
+            messages.add(createMessage("system", systemPrompt));
+
+            // 3. 如果有 RAG 上下文，添加到消息中
+            if (ragContext != null) {
+                log.info("启用 RAG，检索到上下文，问题: {}", message);
+                messages.add(createMessage("user", ragContext + "\n\n用户问题：" + message));
+            } else {
+                // 4. 添加历史消息（只保留最近2轮）
+                if (history != null && !history.isEmpty()) {
+                    int start = Math.max(0, history.size() - 2);
+                    for (int i = start; i < history.size(); i++) {
+                        Map<String, String> msg = history.get(i);
+                        if (msg != null && msg.get("content") != null) {
+                            messages.add(msg);
+                        }
+                    }
+                }
+                messages.add(createMessage("user", message));
+            }
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", model);
@@ -134,7 +172,32 @@ public class AIServiceImpl implements AIService {
                     return;
                 }
 
-                List<Map<String, String>> messages = buildMessages(message, history);
+                List<Map<String, String>> messages = new ArrayList<>();
+
+                // 流式也支持 RAG
+                String ragContext = null;
+                if (ragEnabled) {
+                    ragContext = ragService.buildRAGContext(message);
+                }
+
+                String systemPrompt = (ragContext != null) ? RAG_SYSTEM_PROMPT : SYSTEM_PROMPT;
+                messages.add(createMessage("system", systemPrompt));
+
+                if (ragContext != null) {
+                    log.info("流式启用 RAG，问题: {}", message);
+                    messages.add(createMessage("user", ragContext + "\n\n用户问题：" + message));
+                } else {
+                    if (history != null && !history.isEmpty()) {
+                        int start = Math.max(0, history.size() - 2);
+                        for (int i = start; i < history.size(); i++) {
+                            Map<String, String> msg = history.get(i);
+                            if (msg != null && msg.get("content") != null) {
+                                messages.add(msg);
+                            }
+                        }
+                    }
+                    messages.add(createMessage("user", message));
+                }
 
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("model", model);
@@ -264,14 +327,12 @@ public class AIServiceImpl implements AIService {
         }
     }
 
-    // ====================== 【关键修复】只发最新2轮对话，绝不超长 ======================
+    // ====================== 私有方法 ======================
+
     private List<Map<String, String>> buildMessages(String message, List<Map<String, String>> history) {
         List<Map<String, String>> messages = new ArrayList<>();
-
-        // 干净系统提示
         messages.add(createMessage("system", "你是博客AI智能助手，回答简洁、准确、使用中文。"));
 
-        // 只保留最近 2 轮对话
         if (history != null && !history.isEmpty()) {
             int start = Math.max(0, history.size() - 2);
             for (int i = start; i < history.size(); i++) {
@@ -324,4 +385,5 @@ public class AIServiceImpl implements AIService {
         }
         return ids;
     }
+
 }

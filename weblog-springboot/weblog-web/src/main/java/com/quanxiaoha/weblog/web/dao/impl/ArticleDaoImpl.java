@@ -9,11 +9,13 @@ import com.quanxiaoha.weblog.web.dao.ArticleDao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
- * @author: dgq   
+ * @author: dgq
  * @date: 2023-04-17 12:08
  * @description: TODO
  **/
@@ -66,5 +68,16 @@ public class ArticleDaoImpl implements ArticleDao {
         QueryWrapper<ArticleDO> wrapper = new QueryWrapper<>();
         wrapper.lambda().in(ArticleDO::getId, articleIds).orderByDesc(ArticleDO::getCreateTime);
         return articleMapper.selectPage(page, wrapper);
+    }
+
+    // ========== 新增：RAG 检索 ==========
+
+    @Override
+    public List<ArticleDO> searchByKeywords(List<String> keywords) {
+        if (CollectionUtils.isEmpty(keywords)) {
+            return Collections.emptyList();
+        }
+        // 调用 ArticleMapper 的 searchByKeywords 方法
+        return articleMapper.searchByKeywords(keywords);
     }
 }
