@@ -1,9 +1,11 @@
+// TagServiceImpl.java
 package com.quanxiaoha.weblog.web.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.quanxiaoha.weblog.common.Response;
 import com.quanxiaoha.weblog.common.domain.mapper.TagMapper;
 import com.quanxiaoha.weblog.common.domain.dos.TagDO;
+import com.quanxiaoha.weblog.common.domain.dos.TagWithCountDO;
 import com.quanxiaoha.weblog.web.dao.TagDao;
 import com.quanxiaoha.weblog.web.model.vo.tag.QueryTagListItemRspVO;
 import com.quanxiaoha.weblog.web.service.TagService;
@@ -15,11 +17,6 @@ import org.springframework.util.CollectionUtils;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author: dgq   
- * @date: 2023-04-17 12:08
- * @description: TODO
- **/
 @Service
 @Slf4j
 public class TagServiceImpl extends ServiceImpl<TagMapper, TagDO> implements TagService {
@@ -29,18 +26,19 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, TagDO> implements Tag
 
     @Override
     public Response queryTagList() {
-        List<TagDO> tagDOS = tagDao.selectAllTag();
-        List<QueryTagListItemRspVO> list = null;
+        // 调用新方法，获取带文章数量的标签列表
+        List<TagWithCountDO> tagList = tagDao.selectTagWithArticleCount();
 
-        if (!CollectionUtils.isEmpty(tagDOS)) {
-            list = tagDOS.stream()
+        List<QueryTagListItemRspVO> list = null;
+        if (!CollectionUtils.isEmpty(tagList)) {
+            list = tagList.stream()
                     .map(p -> QueryTagListItemRspVO.builder()
                             .id(p.getId())
                             .name(p.getName())
+                            .articleCount(p.getArticleCount())  //  返回文章数量
                             .build())
                     .collect(Collectors.toList());
         }
-
         return Response.success(list);
     }
 }

@@ -42,7 +42,7 @@ const menus = [
   {
     'name': '数据中心',
     'icon': 'Monitor',
-    'path': '/data/center',
+    'path': '/admin/data/center',
     'child': []
   },
     {
@@ -74,7 +74,13 @@ const menus = [
     'icon': 'Comment',
     'path': '/admin/comment/list',
     'child': []
+  },{
+    'name': '留言管理',
+    'icon': 'message',
+    'path': '/admin/messageBoard',
+    'child': []
   },
+
 // {
 //     'name': '轮播图管理',
 //     'icon': 'Picture',

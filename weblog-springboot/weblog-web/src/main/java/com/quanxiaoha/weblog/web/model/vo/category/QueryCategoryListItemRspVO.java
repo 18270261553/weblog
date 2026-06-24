@@ -17,4 +17,5 @@ import lombok.NoArgsConstructor;
 public class QueryCategoryListItemRspVO {
     private Long id;
     private String name;
+    private Integer articleCount;
 }

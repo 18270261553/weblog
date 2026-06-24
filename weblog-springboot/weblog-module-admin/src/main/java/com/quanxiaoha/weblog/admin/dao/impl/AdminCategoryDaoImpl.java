@@ -2,6 +2,7 @@ package com.quanxiaoha.weblog.admin.dao.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.quanxiaoha.weblog.admin.dao.AdminCategoryDao;
+import com.quanxiaoha.weblog.common.domain.dos.CategoryWithCountDO;
 import com.quanxiaoha.weblog.common.domain.mapper.CategoryMapper;
 import com.quanxiaoha.weblog.common.domain.dos.CategoryDO;
 import lombok.extern.slf4j.Slf4j;
@@ -32,4 +33,5 @@ public class AdminCategoryDaoImpl implements AdminCategoryDao {
         wrapper.select("1").lambda().eq(CategoryDO::getIsDeleted, 0);
         return categoryMapper.selectCount(wrapper);
     }
+
 }

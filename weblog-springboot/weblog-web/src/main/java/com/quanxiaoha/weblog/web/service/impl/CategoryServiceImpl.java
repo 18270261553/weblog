@@ -2,6 +2,7 @@ package com.quanxiaoha.weblog.web.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.quanxiaoha.weblog.common.Response;
+import com.quanxiaoha.weblog.common.domain.dos.CategoryWithCountDO;
 import com.quanxiaoha.weblog.common.domain.mapper.CategoryMapper;
 import com.quanxiaoha.weblog.common.domain.dos.CategoryDO;
 import com.quanxiaoha.weblog.web.dao.CategoryDao;
@@ -30,12 +31,14 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, CategoryDO>
     @Override
     public Response queryCategoryList() {
         List<CategoryDO> categoryDOList = categoryDao.selectAllCategory();
+        List<CategoryWithCountDO> categoryList = categoryDao.selectCategoryWithArticleCount();
         List<QueryCategoryListItemRspVO> list = null;
-        if (!CollectionUtils.isEmpty(categoryDOList)) {
-            list = categoryDOList.stream()
+        if (!CollectionUtils.isEmpty(categoryList)) {
+            list = categoryList.stream()
                     .map(p -> QueryCategoryListItemRspVO.builder()
                             .id(p.getId())
                             .name(p.getName())
+                            .articleCount(p.getArticleCount())
                             .build())
                     .collect(Collectors.toList());
         }

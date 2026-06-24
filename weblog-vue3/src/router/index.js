@@ -45,15 +45,36 @@ const routes = [
                 path: 'comment/list',
                 component: () => import('@/pages/admin/comment-list.vue'),
                 meta: { title: '评论管理' }
+            },
+            {
+                path: 'messageBoard',
+                component: () => import('@/pages/admin/message-board.vue'),
+                meta: { title: '留言管理' }
             }
         ]
     },
 
     // ========== 前台页面 ==========
+
     {
         path: '/',
+        component: () => import('@/pages/frontend/home.vue'),
+        meta: { title: '欢迎页' }
+    },
+    {
+        path: '/index',
         component: () => import('@/pages/frontend/index.vue'),
         meta: { title: 'WeBlog首页' }
+    },
+    {
+        path: '/about',
+        component: () => import('@/pages/frontend/About.vue'),
+        meta: { title: '关于页' }
+    },
+    {
+        path: '/explore',
+        component: () => import('@/pages/frontend/explore.vue'),
+        meta: { title: '开始探索页' }
     },
     {
         path: '/about',
@@ -94,6 +115,11 @@ const routes = [
         path: '/aiChatbot',
         component: () => import('@/pages/frontend/aiChatbot.vue'),
         meta: { title: 'AI搜索' }
+    },
+    {
+        path: '/messageBoard',
+        component: () => import('@/pages/frontend/message-board.vue'),
+        meta: { title: '留言板' }
     },
     {
         path: '/search',

@@ -1,6 +1,7 @@
 package com.quanxiaoha.weblog.web.dao.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.quanxiaoha.weblog.common.domain.dos.CategoryWithCountDO;
 import com.quanxiaoha.weblog.common.domain.mapper.CategoryMapper;
 import com.quanxiaoha.weblog.common.domain.dos.CategoryDO;
 import com.quanxiaoha.weblog.web.dao.CategoryDao;
@@ -33,5 +34,8 @@ public class CategoryDaoImpl implements CategoryDao {
         wrapper.lambda().eq(CategoryDO::getId, categoryId);
         return categoryMapper.selectOne(wrapper);
     }
-
+    @Override
+    public List<CategoryWithCountDO> selectCategoryWithArticleCount() {
+        return categoryMapper.selectCategoryWithArticleCount();
+    }
 }

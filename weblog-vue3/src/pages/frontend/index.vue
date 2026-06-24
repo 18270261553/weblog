@@ -1,6 +1,24 @@
 <template>
-  <Header></Header>
+  <!-- ===== 随机背景头图横幅 ===== -->
+  <div class="header-banner" :style="{ '--banner-image': 'url(' + bannerImage + ')' }">
 
+    <div class="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+      <div class="header-wrapper">
+        <Header></Header>
+      </div>
+
+
+      <!-- 固定标题 -->
+      <h1 class="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">
+        welcome to my blog
+      </h1>
+      <!-- 动态副标题 -->
+      <p class="text-lg md:text-xl text-gray-200 mt-2 drop-shadow-md transition-opacity duration-500"
+         :class="{ 'opacity-0': isSwitching, 'opacity-100': !isSwitching }">
+        {{ currentSlogan }}
+      </p>
+    </div>
+  </div>
   <div class="container mx-auto max-w-screen-xl mt-5">
     <div class="grid grid-cols-4">
       <!-- 左边栏 -->
@@ -27,7 +45,6 @@
               </a>
               <p class="mb-3 font-normal text-gray-500 dark:text-gray-400">{{ article.description }}</p>
 
-              <!-- ====================== 这里修复了 HTML 结构 ====================== -->
               <div class="text-gray-400 text-sm flex items-center article-mata">
                 <svg class="inline w-3 h-3 mr-2 text-gray-400 dark:white" aria-hidden="true"
                      xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
@@ -159,7 +176,7 @@ import Header from '@/layouts/components/Header.vue'
 import Footer from '@/layouts/components/Footer.vue'
 import UserInfoCard from '@/components/UserInfoCard.vue'
 import { useRouter } from 'vue-router'
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { getIndexArticles } from '@/api/frontend/index'
 import { getCategories } from '@/api/frontend/category'
 import { getTags } from '@/api/frontend/tag'
@@ -174,6 +191,85 @@ const goArticleDetail = (articleId) => {
   router.push({ path: '/article/detail', query: { articleId: articleId } })
 }
 
+// ============ 动态文案库 ============
+const sloganList = [
+  '这个世界很大，告别的方式有多少种，人生的正确答案就有多少个。',
+  '这世界太大，勇敢的少年奔赴天涯',
+  '风月折断杨柳枝，琴瑟朝露挥掷成诗',
+  '愿做一束光，照亮前行的路',
+  '用文字记录时光，以热爱对抗岁月',
+  '山川湖海，人间烟火，皆可入文',
+  '在喧嚣世界里，安静地写点东西',
+  '每一段文字，都是与自己的对话',
+  '保持热爱，奔赴山海',
+  '且将新火试新茶，诗酒趁年华',
+  '追风赶月莫停留，平芜尽处是春山',
+  '心有山海，静而无边',
+  '半山听雨，一室茶香',
+  '掬水月在手，弄花香满衣',
+  '行到水穷处，坐看云起时',
+]
+
+// ============ 随机头图 ============
+const bannerImage = ref('https://api.boxmoe.com/random.php?size=mw1024')
+let refreshTimer = null
+
+// 刷新头图
+const refreshBanner = () => {
+  bannerImage.value = `https://api.boxmoe.com/random.php?size=mw1024&t=${Date.now()}`
+}
+
+// ============ 动态副标题 ============
+const currentSlogan = ref(sloganList[0])
+const isSwitching = ref(false)
+let sloganTimer = null
+
+// 切换副标题（随机获取一条）
+const switchSlogan = () => {
+  // 先淡出
+  isSwitching.value = true
+
+  setTimeout(() => {
+    // 随机获取一条（确保与当前不同）
+    let newSlogan
+    do {
+      const randomIndex = Math.floor(Math.random() * sloganList.length)
+      newSlogan = sloganList[randomIndex]
+    } while (newSlogan === currentSlogan.value && sloganList.length > 1)
+
+    currentSlogan.value = newSlogan
+    // 淡入
+    isSwitching.value = false
+  }, 400) // 等待淡出动画完成
+}
+
+// ============ 生命周期 ============
+onMounted(() => {
+  // 头图自动刷新（每 30 秒）
+  refreshTimer = setInterval(refreshBanner, 30000)
+
+  // 副标题自动切换（每 8 秒）
+  sloganTimer = setInterval(switchSlogan, 8000)
+})
+
+onBeforeUnmount(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+  if (sloganTimer) {
+    clearInterval(sloganTimer)
+    sloganTimer = null
+  }
+})
+
+// 暴露方法
+defineExpose({
+  refreshBanner,
+  switchSlogan
+})
+
+// ============ 文章相关 ============
 const articles = ref([])
 const current = ref(1)
 const total = ref(0)
@@ -186,12 +282,10 @@ async function loadLikeAndCommentCount(articleList) {
 
   for (let article of articleList) {
     try {
-      // ✅ 修复：这里必须传对象 { articleId: article.id }
       const likeRes = await getArticleLikeCount({ articleId: article.id })
       console.log("点赞返回:", likeRes)
       article.likeCount = likeRes.data || 0
 
-      // 2. 加载评论数
       const commentRes = await getCommentPageList({
         articleId: article.id,
         current: 1,
@@ -218,7 +312,6 @@ async function getArticles(currentNo) {
       size.value = res.size
       pages.value = res.pages
 
-      // 加载数量
       await loadLikeAndCommentCount(articles.value)
     }
   } catch (e) {
@@ -250,7 +343,6 @@ const goTagArticleListPage = (id, name) => {
 }
 </script>
 
-
 <style>
 .container {
   max-width: 1230px;
@@ -271,10 +363,8 @@ const goTagArticleListPage = (id, name) => {
 .el-menu--horizontal .el-menu-item:not(.is-disabled):hover {
   outline: 0;
   color: var(--el-menu-text-color);
-;
   background-color: #fff;
   border-bottom: 2px solid #409eff;
-;
 }
 
 .category-item:hover {
@@ -292,5 +382,189 @@ const goTagArticleListPage = (id, name) => {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* ========== 随机头图横幅 ========== */
+.header-banner {
+  width: 100%;
+  height: 500px;
+  border-radius: 16px;
+  background-image: var(--banner-image);
+  background-size: cover;
+  background-position: center 30%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  transition: background-image 0.8s ease-in-out;
+  position: relative;
+  margin-bottom: 2rem;
+  overflow: visible;  /* ✅ 允许子元素溢出 */
+}
+
+/* ===== 暗色遮罩层 ===== */
+.header-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.75) 0%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.5) 100%
+  );
+  border-radius: 16px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ===== 底部光晕装饰 ===== */
+.header-banner::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+  border-radius: 0 0 16px 16px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ===== 文字内容在遮罩之上 ===== */
+.header-banner .relative {
+  z-index: 2;
+  position: relative;
+}
+
+/* ===== 标题文字阴影增强 ===== */
+.header-banner h1 {
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.05em;
+}
+
+.header-banner p {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== 文字切换过渡动画 ===== */
+.header-banner p {
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* ===== 加载动画 ===== */
+.header-banner.loading {
+  animation: bannerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes bannerPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* ========== Header 圆角包裹层 ========== */
+.header-wrapper {
+  position: sticky;
+  top: 12px;
+  z-index: 100;
+  padding: 0 16px;
+  margin-bottom: 20px;
+  overflow: visible !important;  /* ✅ 允许溢出 */
+}
+
+.header-wrapper > header {
+  border-radius: 16px !important;
+  overflow: visible !important;  /* ✅ 改为 visible，允许下拉菜单溢出 */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 让 Header 内部的 nav 也继承圆角，但允许溢出 */
+.header-wrapper > header nav,
+.header-wrapper > header .nav-glass,
+.header-wrapper > header .bg-white {
+  border-radius: 16px !important;
+  overflow: visible !important;  /* ✅ 改为 visible */
+}
+
+/* 去掉 Header 自身的 sticky，由外层控制 */
+.header-wrapper > header {
+  position: relative !important;
+  top: auto !important;
+  z-index: auto !important;
+}
+
+/* 如果 Header 内部有 border-bottom，去掉 */
+.header-wrapper .border-b {
+  border-bottom: none !important;
+}
+
+/* ===== ✅ 修复搜索下拉菜单被遮挡 ===== */
+
+/* 让 Header 内部的搜索区域允许溢出 */
+.header-wrapper .relative {
+  overflow: visible !important;
+}
+
+.header-wrapper .flex-1 {
+  overflow: visible !important;
+}
+
+.header-wrapper .md\:block {
+  overflow: visible !important;
+}
+
+/* 搜索下拉菜单强制最高层级 */
+.header-wrapper .z-50 {
+  z-index: 9999 !important;
+}
+
+/* 下拉菜单样式增强 */
+.header-wrapper .z-50.max-h-80 {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* ===== 响应式适配 ===== */
+@media (max-width: 768px) {
+  .header-banner {
+    height: 200px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .header-banner h1 {
+    font-size: 1.6rem !important;
+  }
+
+  .header-banner p {
+    font-size: 0.95rem !important;
+  }
+
+  .header-banner::after,
+  .header-banner::before {
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-banner {
+    height: 160px;
+    border-radius: 8px;
+  }
+
+  .header-banner h1 {
+    font-size: 1.2rem !important;
+  }
+
+  .header-banner p {
+    font-size: 0.8rem !important;
+    margin-top: 4px !important;
+  }
+}
+
+.bg-white {
+  background: transparent;
 }
 </style>
