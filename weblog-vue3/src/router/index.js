@@ -76,11 +76,11 @@ const routes = [
         component: () => import('@/pages/frontend/explore.vue'),
         meta: { title: '开始探索页' }
     },
-    {
-        path: '/about',
-        component: () => import('@/pages/about.vue'),
-        meta: { title: '关于' }
-    },
+    // {
+    //     path: '/about',
+    //     component: () => import('@/pages/about.vue'),
+    //     meta: { title: '关于' }
+    // },
     {
         path: '/article/detail',
         component: () => import('@/pages/frontend/article-detail.vue'),
@@ -113,7 +113,7 @@ const routes = [
     },
     {
         path: '/aiChatbot',
-        component: () => import('@/pages/frontend/aiChatbot.vue'),
+        component: () => import('@/pages/frontend/AIChatbot.vue'),
         meta: { title: 'AI搜索' }
     },
     {

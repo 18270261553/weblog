@@ -1,0 +1,78 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: weblog-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: data
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: always
+    networks:
+      - weblog-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: weblog-redis
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - weblog-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: weblog-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    restart: always
+    networks:
+      - weblog-network
+
+  backend:
+    build:
+      context: ./weblog-springboot/weblog-web
+      dockerfile: Dockerfile
+    container_name: weblog-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql
+      - redis
+      - minio
+    restart: always
+    networks:
+      - weblog-network
+
+  frontend:
+    build:
+      context: ./weblog-vue3
+      dockerfile: Dockerfile
+    container_name: weblog-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - weblog-network
+
+volumes:
+  mysql-data:
+  minio-data:
+
+networks:
+  weblog-network:
+    driver: bridge

@@ -1,7 +1,8 @@
 spring:
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/data?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=false&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # ✅ 改成 mysql（这是 docker-compose.yml 里定义的服务名）
+    url: jdbc:mysql://mysql:3306/data?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=false&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true
     username: root
     password: 123456
     hikari:
@@ -13,9 +14,40 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
       connection-test-query: SELECT 1
-  
-#=================================================================
-# log
-#=================================================================
+
+  # ✅ Redis 也要改
+  redis:
+    host: redis  # ← 不是 localhost，是容器名 redis
+    port: 6379
+    database: 0
+    lettuce:
+      pool:
+        max-active: 8
+        maxidle: 8
+        min-idle: 0
+        max-wait: -1
+
+# ✅ MinIO 也要改
+minio:
+  endpoint: http://minio:9000  # ← 不是 localhost，是容器名 minio
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: weblog
+
+# AI 配置
+ai:
+  enabled: true
+  rag:
+    enabled: true
+  timeout: 60000
+  max-tokens: 1024
+  temperature: 0.7
+
+# DeepSeek 配置
+deepseek:
+  api-key: ${DEEPSEEK_API_KEY:}
+  api-url: https://api.deepseek.com
+  model: deepseek-chat
+
 logging:
   config: classpath:logback-weblog.xml

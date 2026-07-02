@@ -8,7 +8,8 @@ const instance = axios.create({
     timeout: 7000,
     headers: {
         'Content-Type': 'application/json;charset=UTF-8'
-    }
+    },
+    withCredentials: true  // ← 关键：允许携带 Cookie
 });
 
 // 添加请求拦截器
@@ -26,14 +27,14 @@ instance.interceptors.request.use(function (config) {
 instance.interceptors.response.use(function (response) {
     return response.data;
 }, function (error) {
-    let status = error.response.status
+    let status = error.response?.status
     if (status == 401 || status == 402) {
         store.dispatch('logout').finally(() => location.reload())
     }
 
-    let isSuccess = error.response.data.success
+    let isSuccess = error.response?.data?.success
     if (!isSuccess) {
-        let message = error.response.data.message || '请求失败'
+        let message = error.response?.data?.message || '请求失败'
         showMessage(message, 'error')
     }
 
